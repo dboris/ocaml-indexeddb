@@ -2,6 +2,7 @@
    details. *)
 
 include Idb_sigs.DB
+open Js_of_ocaml
 
 (** Store that uses the standard serialization provided by IndexeDB
     (structured clone algorithm):

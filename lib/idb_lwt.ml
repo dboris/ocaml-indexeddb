@@ -1,7 +1,9 @@
 (* Copyright (C) 2015, Thomas Leonard. See the LICENSE file for
    details. *)
 
-open Lwt.Infix
+open Lwt
+open Js_of_ocaml
+module Lwt_js = Js_of_ocaml_lwt.Lwt_js
 
 let option_map f x =
   match x with
@@ -28,10 +30,10 @@ type store_name = Js.js_string Js.t
 let store_name = Js.string
 
 let create_store (db : db) name =
-  ignore db##createObjectStore(name)
+  ignore (db##createObjectStore name)
 
 let close db =
-  db##close ()
+  db##close
 
 let get_factory () =
   let factory : Idb_js_api.factory Js.t Js.Optdef.t =
@@ -42,14 +44,14 @@ let get_factory () =
 
 let delete_database db_name =
   let factory = get_factory () in
-  let request = factory##deleteDatabase(db_name) in
+  let request = factory##deleteDatabase db_name in
   let t, set_t = Lwt.wait () in
-  request##onerror <- Dom.handler (fun _event ->
+  request##.onerror := Dom.handler (fun _event ->
       Lwt.wakeup_exn set_t
         (Failure "Error trying to delete IndexedDB database");
       Js._true
     );
-  request##onsuccess <- Dom.handler (fun _event ->
+  request##.onsuccess := Dom.handler (fun _event ->
       Lwt.wakeup set_t ();
       Js._true
     );
@@ -61,21 +63,21 @@ let idb_error typ
     Failure
       (Printf.sprintf "IndexedDB operation (%s) failed: %s" typ msg)
   in
-  Js.Opt.case (event##target)
+  Js.Opt.case event##.target
     (fun () -> failure "(missing target on error event)")
     (fun target ->
-       Js.Opt.case (target##error)
+       Js.Opt.case target##.error
          (fun () -> failure "(missing error on request)")
          (fun error ->
             let name =
-              opt_string (error##name)
+              opt_string error##.name
                 ~if_missing:"(no name)"
             in
             let message =
-              opt_string (error##message)
+              opt_string error##.message
                 ~if_missing:"(no message)"
             in
-            let code = Js.Optdef.get (error##code) (fun () -> 0) in
+            let code = Js.Optdef.get error##.code (fun () -> 0) in
             if name = "AbortError" then
               AbortError
             else
@@ -85,17 +87,17 @@ let idb_error typ
 
 let make db_name ~version ~init =
   let factory = get_factory () in
-  let request = factory##_open (db_name, version) in
+  let request = factory##_open db_name version in
   let t, set_t = Lwt.wait () in
-  request##onblocked <- Dom.handler (fun _event ->
+  request##.onblocked := Dom.handler (fun _event ->
       print_endline
         "Waiting for other IndexedDB users to close \
          their connections before upgrading schema version.";
       Js._true
     );
-  request##onupgradeneeded <- Dom.handler (fun _event ->
+  request##.onupgradeneeded := Dom.handler (fun _event ->
       try
-        init (request##result);
+        init request##.result;
         Js._true
       with ex ->
         (* Firefox throws the exception away and returns AbortError
@@ -103,7 +105,7 @@ let make db_name ~version ~init =
         Lwt.wakeup_exn set_t ex;
         raise ex
     );
-  request##onerror <- Dom.handler (fun event ->
+  request##.onerror := Dom.handler (fun event ->
       begin match Lwt.state t, idb_error "open" event with
         | Lwt.Fail _, AbortError ->
           () (* Already reported a better exception *)
@@ -112,8 +114,8 @@ let make db_name ~version ~init =
       end;
       Js._true
     );
-  request##onsuccess <- Dom.handler (fun _event ->
-      Lwt.wakeup set_t (request##result);
+  request##.onsuccess := Dom.handler (fun _event ->
+      Lwt.wakeup set_t request##.result;
       Js._true
     );
   t
@@ -129,8 +131,7 @@ module Unsafe = struct
        This does mean that if any read fails then the others will
        hang, but we treat any read failing as a fatal error anyway. *)
     mutable ro_trans :
-      ('a Idb_js_api.transaction Js.t *
-       (exn -> unit) list ref) option;
+      ('a Idb_js_api.transaction Js.t * (exn -> unit) list ref) option;
   }
 
   type key = Js.js_string Js.t
@@ -146,9 +147,10 @@ module Unsafe = struct
       let breakers = ref [Lwt.wakeup_exn set_r] in
       let trans =
         t.db##transaction
-          (Js.array [| t.store_name |], Js.string "readonly") in
+          (Js.array [| t.store_name |])
+          (Js.string "readonly") in
       t.ro_trans <- Some (trans, breakers);
-      trans##onerror <- Dom.handler (fun event ->
+      trans##.onerror := Dom.handler (fun event ->
           t.ro_trans <- None;
           let ex = idb_error "RO" event in
           if ex = AbortError then
@@ -157,7 +159,7 @@ module Unsafe = struct
           !breakers |> List.iter (fun b -> b ex);
           Js._true
         );
-      trans##oncomplete <- Dom.handler (fun _event ->
+      trans##.oncomplete := Dom.handler (fun _event ->
           t.ro_trans <- None;
           Js._true
         );
@@ -196,13 +198,14 @@ module Unsafe = struct
     let r, set_r = Lwt.wait () in
     let trans =
       t.db##transaction
-        (Js.array [| t.store_name |], Js.string "readwrite")
+        (Js.array [| t.store_name |])
+        (Js.string "readwrite")
     in
-    trans##onerror <- Dom.handler (fun event ->
+    trans##.onerror := Dom.handler (fun event ->
         Lwt.wakeup_exn set_r (idb_error "RW" event);
         Js._true
       );
-    trans##oncomplete <- Dom.handler (fun _event ->
+    trans##.oncomplete := Dom.handler (fun _event ->
         Lwt.wakeup set_r ();
         Js._true
       );
@@ -211,38 +214,38 @@ module Unsafe = struct
 
   let set t key value =
     trans_rw t @@ fun store ->
-    ignore (store##put(value, key))
+    ignore (store##put value key)
 
   let get t key =
     trans_ro t @@ fun store set_r ->
-    let request = store##get(key) in
-    request##onsuccess <-
+    let request = store##get key in
+    request##.onsuccess :=
       Dom.handler @@ fun _event ->
-      Js.Optdef.to_option (request##result)
+      Js.Optdef.to_option request##.result
       |> Lwt.wakeup set_r;
       Js._true
 
   let remove t key =
     trans_rw t @@ fun store ->
-    ignore (store##delete(key))
+    ignore (store##delete key)
 
   let compare_and_set t key ~test ~new_value =
     let result = ref None in
     (trans_rw t @@ fun store ->
-     let request = store##get(key) in
-     request##onsuccess <-
+     let request = store##get key in
+     request##.onsuccess :=
        Dom.handler (fun _event ->
            if
-             request##result
+             request##.result
              |> Js.Optdef.to_option
              |> test
            then (
              begin
                ignore @@ match new_value with
                | None ->
-                 store##delete(key)
+                 store##delete key
                | Some new_value ->
-                 store##put(new_value, key)
+                 store##put new_value key
              end;
              result := Some true
            ) else (
@@ -257,16 +260,16 @@ module Unsafe = struct
   let fold f acc t =
     let acc = ref acc in
     trans_ro t @@ fun store set_r ->
-    let request = store##openCursor () in
-    request##onsuccess <-
+    let request = store##openCursor in
+    request##.onsuccess :=
       Dom.handler @@ fun _event ->
-      Js.Opt.case (request##result)
+      Js.Opt.case request##.result
         (fun () -> Lwt.wakeup set_r !acc)
         (fun cursor ->
-           let key = cursor##key
-           and value = cursor##value in
+           let key = cursor##.key
+           and value = cursor##.value in
            acc := f !acc key value;
-           cursor##continue ());
+           cursor##continue);
       Js._true
 
   let bindings t =

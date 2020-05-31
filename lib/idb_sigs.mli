@@ -1,6 +1,8 @@
 (* Copyright (C) 2015, Thomas Leonard. See the LICENSE file for
    details. *)
 
+open Js_of_ocaml
+
 module type Js_string_conv = sig
 
   type key
