@@ -37,7 +37,7 @@ let close db =
 
 let get_factory () =
   let factory : Idb_js_api.factory Js.t Js.Optdef.t =
-    (Obj.magic Dom_html.window)##indexedDB
+    (Js.Unsafe.coerce Dom_html.window)##.indexedDB
   in
   Js.Optdef.get factory
     (fun () -> failwith "IndexedDB not available")
