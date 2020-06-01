@@ -10,24 +10,26 @@
 
 open Js_of_ocaml
 
-(* Note: we currently assume all keys and values are strings. This
-   will always be the case for entries added using this interface. *)
+(* Note: we currently assume all keys are strings. This will always
+   be the case for entries added using this interface. *)
 type key = Js.js_string Js.t
 type _ store_name = Js.js_string Js.t
 type mode = Js.js_string Js.t
 
 class type versionChangeEvent = object
   inherit Dom_html.event
-
   method oldVersion : int Js.readonly_prop
   method newVersion : int Js.readonly_prop
 end
+
 class type ['a] errorEvent = object
   inherit ['a] Dom.event
 end
+
 class type completeEvent = object
   inherit Dom_html.event
 end
+
 class type successEvent = object
   inherit Dom_html.event
 end
@@ -42,7 +44,7 @@ class type ['a] cursorWithValue = object
   method value : 'a Js.readonly_prop
 end
 
-class type dom_exception = object
+class type domException = object
   (* Being a bit paranoid marking all these as optdef *)
   method name : Js.js_string Js.t Js.Optdef.t Js.readonly_prop
   method message : Js.js_string Js.t Js.Optdef.t Js.readonly_prop
@@ -50,11 +52,9 @@ class type dom_exception = object
 end
 
 class type request = object
-  method error : dom_exception Js.t Js.Opt.t Js.readonly_prop
-  method onerror :
-    ('self Js.t, request errorEvent Js.t) Dom.event_listener Js.prop
-  method onsuccess :
-    ('self Js.t, successEvent Js.t) Dom.event_listener Js.prop
+  method error : domException Js.t Js.Opt.t Js.readonly_prop
+  method onerror : ('self Js.t, request errorEvent Js.t) Dom.event_listener Js.prop
+  method onsuccess : ('self Js.t, successEvent Js.t) Dom.event_listener Js.prop
 end
 
 class type ['a] getRequest = object ('self)
