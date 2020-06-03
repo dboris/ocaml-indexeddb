@@ -1,0 +1,14 @@
+(executable
+  (name test_runner)
+  (modes js)
+  (libraries
+    indexeddb
+    webtest
+    webtest-js
+    lwt
+    js_of_ocaml
+    js_of_ocaml-lwt)
+  (preprocess
+    (pps
+      js_of_ocaml-ppx
+      lwt_ppx)))

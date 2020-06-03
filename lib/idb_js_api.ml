@@ -57,7 +57,7 @@ class type request = object
   method onsuccess : ('self Js.t, successEvent Js.t) Dom.event_listener Js.prop
 end
 
-class type ['a] getRequest = object ('self)
+class type ['a] requestWithResult = object
   inherit request
   method result : 'a Js.Optdef.t Js.readonly_prop
 end
@@ -67,12 +67,22 @@ class type ['a] openCursorRequest = object
   method result : 'a cursorWithValue Js.t Js.Opt.t Js.readonly_prop
 end
 
+class type createObjectStoreOptions = object
+  method keyPath : Js.js_string Js.t Js.writeonly_prop
+  method autoIncrement : bool Js.t Js.writeonly_prop
+end
+
+let createObjectStoreOptions () : createObjectStoreOptions Js.t =
+  Js.Unsafe.obj [||]
+
 class type ['a] objectStore = object
   method add : 'a Js.t -> key -> request Js.t Js.meth
   method put : 'a Js.t -> key -> request Js.t Js.meth
   method delete : key -> request Js.t Js.meth
-  method get : key -> 'a Js.t getRequest Js.t Js.meth
+  method get : key -> 'a Js.t requestWithResult Js.t Js.meth
   method openCursor : 'a Js.t openCursorRequest Js.t Js.meth
+  method keyPath : key Js.readonly_prop
+  method autoIncrement : bool Js.t Js.readonly_prop
 end
 
 class type ['a] transaction = object
@@ -88,6 +98,8 @@ class type database = object
   method close : unit Js.meth
   method createObjectStore :
     'a . 'a store_name -> 'a objectStore Js.t Js.meth
+  method createObjectStore_withOptions :
+    'a . 'a store_name -> createObjectStoreOptions Js.t -> 'a objectStore Js.t Js.meth
   method deleteObjectStore :
     'a . 'a store_name -> unit Js.meth
   method onerror :
