@@ -76,8 +76,8 @@ let createObjectStoreOptions () : createObjectStoreOptions Js.t =
   Js.Unsafe.obj [||]
 
 class type keyRange = object
-  method lower : key Js.readonly_prop
-  method upper : key Js.readonly_prop
+  method lower : key Js.Optdef.t Js.readonly_prop
+  method upper : key Js.Optdef.t Js.readonly_prop
   method lowerOpen : bool Js.t Js.readonly_prop
   method upperOpen : bool Js.t Js.readonly_prop
   method includes : key -> bool Js.t Js.meth
@@ -87,6 +87,11 @@ class type keyRange_constr = object
   method bound : key -> key -> keyRange Js.t Js.meth
   method bound_lowerOpen : key -> key -> bool Js.t -> keyRange Js.t Js.meth
   method bound_lowerAndUpperOpen : key -> key -> bool Js.t -> bool Js.t -> keyRange Js.t Js.meth
+  method lowerBound : key -> keyRange Js.t Js.meth
+  method lowerBound_open : key -> bool Js.t -> keyRange Js.t Js.meth
+  method upperBound : key -> keyRange Js.t Js.meth
+  method upperBound_open : key -> bool Js.t -> keyRange Js.t Js.meth
+  method only : key -> keyRange Js.t Js.meth
 end
 
 let keyRange_constr = Js.Unsafe.global##._IDBKeyRange

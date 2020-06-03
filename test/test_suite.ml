@@ -73,14 +73,47 @@ let test_put_object wrapper =
             Js._true);
         Js._true)
 
-let test_keyRange_constr () =
+let test_keyRange_constr_bound () =
     let lower = Js.string "a"
     and upper = Js.string "z" in
     let range = Idb_js_api.keyRange##bound lower upper in
-    assert_equal range##.lower lower;
-    assert_equal range##.upper upper;
+    Js.Optdef.case
+        range##.lower
+        test_fail
+        (fun x -> assert_equal x lower);
+    Js.Optdef.case
+        range##.upper
+        test_fail
+        (fun x -> assert_equal x upper);
     assert_true (Js.to_bool (range##includes (Js.string "p")));
     assert_true (not (Js.to_bool (range##includes (Js.string "?"))))
+
+let test_keyRange_constr_lowerBound () =
+    let lower = Js.string "p" in
+    let range = Idb_js_api.keyRange##lowerBound_open lower (Js.bool true) in
+    Js.Optdef.case
+        range##.lower
+        test_fail
+        (fun x -> assert_equal x lower);
+    assert_true (not (Js.Optdef.test range##.upper));
+    assert_true (Js.to_bool (range##.lowerOpen));
+    assert_true (Js.to_bool (range##includes (Js.string "q")));
+    assert_true (not (Js.to_bool (range##includes (Js.string "a"))))
+
+let test_keyRange_constr_only () =
+    let key = Js.string "p" in
+    let range = Idb_js_api.keyRange##only key in
+    Js.Optdef.case
+        range##.lower
+        test_fail
+        (fun x -> assert_equal x key);
+    Js.Optdef.case
+        range##.upper
+        test_fail
+        (fun x -> assert_equal x key);
+    assert_true (not (Js.to_bool (range##.lowerOpen)));
+    assert_true (not (Js.to_bool (range##.upperOpen)));
+    assert_true (Js.to_bool (range##includes key))
 
 let js_api_tests =
     "js_api" >::: [
@@ -89,5 +122,7 @@ let js_api_tests =
         "test_createObjectStore_withOptions" >:~
             test_createObjectStore_withOptions;
         "test_put_object" >:~ test_put_object;
-        "test_keyRange_constr" >:: test_keyRange_constr;
+        "test_keyRange_constr_bound" >:: test_keyRange_constr_bound;
+        "test_keyRange_constr_lowerBound" >:: test_keyRange_constr_lowerBound;
+        "test_keyRange_constr_only" >:: test_keyRange_constr_only;
     ]
