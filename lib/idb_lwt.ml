@@ -5,16 +5,6 @@ open Lwt
 open Js_of_ocaml
 module Lwt_js = Js_of_ocaml_lwt.Lwt_js
 
-let option_map f x =
-  match x with
-  | None   -> None
-  | Some x -> Some (f x)
-
-let opt_string x ~if_missing =
-  Js.Optdef.case x
-    (fun () -> if_missing)
-    (fun x  -> Js.to_string x)
-
 exception AbortError
 
 type db = Idb.database Js.t
@@ -70,12 +60,14 @@ let idb_error typ
          (fun () -> failure "(missing error on request)")
          (fun error ->
             let name =
-              opt_string error##.name
-                ~if_missing:"(no name)"
+              Js.Optdef.case error##.name
+                (fun () -> "(no name)")
+                Js.to_string
             in
             let message =
-              opt_string error##.message
-                ~if_missing:"(no message)"
+              Js.Optdef.case error##.message
+                (fun () -> "(no message)")
+                Js.to_string
             in
             let code = Js.Optdef.get error##.code (fun () -> 0) in
             if name = "AbortError" then
@@ -295,15 +287,15 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
   let get store key =
     C.of_key key
     |> Unsafe.get store
-    |> Lwt.map (option_map C.to_content)
+    |> Lwt.map (Option.map C.to_content)
 
   let remove store key =
     Unsafe.remove store (C.of_key key)
 
   let compare_and_set store key ~test ~new_value =
     let key = C.of_key key
-    and test v = test (option_map C.to_content v)
-    and new_value = option_map C.of_content new_value in
+    and test v = test (Option.map C.to_content v)
+    and new_value = Option.map C.of_content new_value in
     Unsafe.compare_and_set store key ~test ~new_value
 
   let fold f acc store =
@@ -332,14 +324,14 @@ module Json = struct
 
   let get store key =
     Lwt.map
-      (option_map Json.unsafe_input)
+      (Option.map Json.unsafe_input)
       (Unsafe.get store key)
 
   let remove = Unsafe.remove
 
   let compare_and_set store key ~test ~new_value =
-    let test v = test (option_map Json.unsafe_input v)
-    and new_value = option_map Json.output new_value in
+    let test v = test (Option.map Json.unsafe_input v)
+    and new_value = Option.map Json.output new_value in
     Unsafe.compare_and_set store key ~test ~new_value
 
   let fold f acc store =
