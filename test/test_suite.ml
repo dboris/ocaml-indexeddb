@@ -30,9 +30,7 @@ let test_createObjectStore_withOptions wrapper =
         |> ignore;
         Js._true);
 
-    request##.onerror := Dom.handler (fun _ ->
-        wrapper test_fail;
-        Js._true);
+    request##.onerror := Dom.handler (fun _ -> wrapper test_fail; Js._true);
 
     request##.onsuccess := Dom.handler (fun _ ->
         let trans =
@@ -75,6 +73,15 @@ let test_put_object wrapper =
             Js._true);
         Js._true)
 
+let test_keyRange_constr () =
+    let lower = Js.string "a"
+    and upper = Js.string "z" in
+    let range = Idb_js_api.keyRange##bound lower upper in
+    assert_equal range##.lower lower;
+    assert_equal range##.upper upper;
+    assert_true (Js.to_bool (range##includes (Js.string "p")));
+    assert_true (not (Js.to_bool (range##includes (Js.string "?"))))
+
 let js_api_tests =
     "js_api" >::: [
         (* "test_fail" >:: test_fail; *)
@@ -82,4 +89,5 @@ let js_api_tests =
         "test_createObjectStore_withOptions" >:~
             test_createObjectStore_withOptions;
         "test_put_object" >:~ test_put_object;
+        "test_keyRange_constr" >:: test_keyRange_constr;
     ]
