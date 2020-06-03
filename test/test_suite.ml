@@ -90,7 +90,7 @@ let test_keyRange_constr_bound () =
 
 let test_keyRange_constr_lowerBound () =
     let lower = Js.string "p" in
-    let range = Idb_js_api.keyRange##lowerBound_open lower (Js.bool true) in
+    let range = Idb_js_api.keyRange##lowerBound_open lower Js._true in
     Js.Optdef.case
         range##.lower
         test_fail
@@ -115,6 +115,62 @@ let test_keyRange_constr_only () =
     assert_true (not (Js.to_bool (range##.upperOpen)));
     assert_true (Js.to_bool (range##includes key))
 
+let test_getAll_query wrapper =
+    let store_name = Js.string "test-store"
+    and factory = get_factory () in
+    let request = factory##_open db_name 2 in
+
+    request##.onerror := Dom.handler (fun _ -> wrapper test_fail; Js._true);
+
+    request##.onsuccess := Dom.handler (fun _ ->
+        let trans =
+            request##.result##transaction
+                (Js.array [| store_name |])
+                (Js.string "readwrite")
+        in
+        let store = trans##objectStore store_name in
+
+        [Js.string "hi"; Js.string "bonjour"; Js.string "ciao"]
+        |> List.iter (fun key ->
+            store##put_object (Js.Unsafe.obj [| "x", Js.Unsafe.inject key |])
+            |> ignore);
+
+        trans##.onerror := Dom.handler (fun _ ->
+            wrapper test_fail; Js._true);
+
+        trans##.oncomplete := Dom.handler (fun _ ->
+            let trans =
+                request##.result##transaction
+                    (Js.array [| store_name |])
+                    (Js.string "readonly")
+            in
+            let store = trans##objectStore store_name in
+            let query = Idb_js_api.keyRange##upperBound (Js.string "d") in
+            let req = store##getAll_query query in
+
+            req##.onerror := Dom.handler (fun _ ->
+                wrapper test_fail; Js._true);
+
+            req##.onsuccess := Dom.handler (fun _ ->
+                wrapper (fun () ->
+                    Js.Optdef.case
+                        req##.result
+                        test_fail
+                        (fun result ->
+                            assert_equal result##.length 2;
+                            Js.Optdef.case
+                                (Js.array_get result 1)
+                                test_fail
+                                (fun obj ->
+                                    assert_equal
+                                        (Js.Unsafe.get obj (Js.string "x"))
+                                        (Js.string "ciao"))));
+                Js._true);
+
+            Js._true);
+
+        Js._true)
+
 let js_api_tests =
     "js_api" >::: [
         (* "test_fail" >:: test_fail; *)
@@ -125,4 +181,5 @@ let js_api_tests =
         "test_keyRange_constr_bound" >:: test_keyRange_constr_bound;
         "test_keyRange_constr_lowerBound" >:: test_keyRange_constr_lowerBound;
         "test_keyRange_constr_only" >:: test_keyRange_constr_only;
+        "test_getAll_query" >:~ test_getAll_query;
     ]
