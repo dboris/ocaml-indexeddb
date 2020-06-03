@@ -46,7 +46,7 @@ let test_createObjectStore_withOptions wrapper =
             assert_true (not (Js.to_bool store##.autoIncrement)));
         Js._true)
 
-let test_add_object wrapper =
+let test_put_object wrapper =
     let store_name = Js.string "test-store"
     and factory = get_factory () in
     let request = factory##_open db_name 2 in
@@ -62,15 +62,15 @@ let test_add_object wrapper =
         let store = trans##objectStore store_name in
         let key = Js.string "hola" in
         let obj = Js.Unsafe.obj [| "x", Js.Unsafe.inject key |] in
-        let add_request = store##add_object obj in
+        let put_request = store##put_object obj in
 
-        add_request##.onerror := Dom.handler (fun _ ->
+        put_request##.onerror := Dom.handler (fun _ ->
             wrapper test_fail; Js._true);
 
-        add_request##.onsuccess := Dom.handler (fun _ ->
+        put_request##.onsuccess := Dom.handler (fun _ ->
             Js.Optdef.case
-                add_request##.result
-                test_fail
+                put_request##.result
+                (fun () -> wrapper test_fail)
                 (fun k -> wrapper (fun () -> assert_equal k key));
             Js._true);
         Js._true)
@@ -78,8 +78,8 @@ let test_add_object wrapper =
 let js_api_tests =
     "js_api" >::: [
         (* "test_fail" >:: test_fail; *)
-        "test_success" >:: test_success;
+        (* "test_success" >:: test_success; *)
         "test_createObjectStore_withOptions" >:~
             test_createObjectStore_withOptions;
-        "test_add_object" >:~ test_add_object;
+        "test_put_object" >:~ test_put_object;
     ]
