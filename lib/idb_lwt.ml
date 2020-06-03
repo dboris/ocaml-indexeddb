@@ -17,9 +17,9 @@ let opt_string x ~if_missing =
 
 exception AbortError
 
-type db = Idb_js_api.database Js.t
+type db = Idb.database Js.t
 
-type db_upgrader = Idb_js_api.database Js.t
+type db_upgrader = Idb.database Js.t
 
 type db_name = Js.js_string Js.t
 
@@ -36,7 +36,7 @@ let close db =
   db##close
 
 let get_factory () =
-  let factory : Idb_js_api.factory Js.t Js.Optdef.t =
+  let factory : Idb.factory Js.t Js.Optdef.t =
     (Js.Unsafe.coerce Dom_html.window)##.indexedDB
   in
   Js.Optdef.get factory
@@ -58,7 +58,7 @@ let delete_database db_name =
   t
 
 let idb_error typ
-    (event:Idb_js_api.request Idb_js_api.errorEvent Js.t) =
+    (event:Idb.request Idb.errorEvent Js.t) =
   let failure msg =
     Failure
       (Printf.sprintf "IndexedDB operation (%s) failed: %s" typ msg)
@@ -131,7 +131,7 @@ module Unsafe = struct
        This does mean that if any read fails then the others will
        hang, but we treat any read failing as a fatal error anyway. *)
     mutable ro_trans :
-      ('a Idb_js_api.transaction Js.t * (exn -> unit) list ref) option;
+      ('a Idb.transaction Js.t * (exn -> unit) list ref) option;
   }
 
   type key = Js.js_string Js.t

@@ -6,7 +6,7 @@ open Indexeddb
 module Log = Firebug
 
 let get_factory () =
-    let factory : Idb_js_api.factory Js.t Js.Optdef.t =
+    let factory : Idb.factory Js.t Js.Optdef.t =
         (Js.Unsafe.coerce Dom_html.window)##.indexedDB
     in
     Js.Optdef.get factory
@@ -24,7 +24,7 @@ let test_createObjectStore_withOptions wrapper =
     let request = factory##_open db_name 2 in
 
     request##.onupgradeneeded := Dom.handler (fun _ ->
-        let opts = Idb_js_api.createObjectStoreOptions () in
+        let opts = Idb.createObjectStoreOptions () in
         opts##.keyPath := keyPath;
         request##.result##createObjectStore_withOptions store_name opts
         |> ignore;
@@ -76,7 +76,7 @@ let test_put_object wrapper =
 let test_keyRange_constr_bound () =
     let lower = Js.string "a"
     and upper = Js.string "z" in
-    let range = Idb_js_api.keyRange##bound lower upper in
+    let range = Idb.keyRange##bound lower upper in
     Js.Optdef.case
         range##.lower
         test_fail
@@ -90,7 +90,7 @@ let test_keyRange_constr_bound () =
 
 let test_keyRange_constr_lowerBound () =
     let lower = Js.string "p" in
-    let range = Idb_js_api.keyRange##lowerBound_open lower Js._true in
+    let range = Idb.keyRange##lowerBound_open lower Js._true in
     Js.Optdef.case
         range##.lower
         test_fail
@@ -102,7 +102,7 @@ let test_keyRange_constr_lowerBound () =
 
 let test_keyRange_constr_only () =
     let key = Js.string "p" in
-    let range = Idb_js_api.keyRange##only key in
+    let range = Idb.keyRange##only key in
     Js.Optdef.case
         range##.lower
         test_fail
@@ -145,7 +145,7 @@ let test_getAll_query wrapper =
                     (Js.string "readonly")
             in
             let store = trans##objectStore store_name in
-            let query = Idb_js_api.keyRange##upperBound (Js.string "d") in
+            let query = Idb.keyRange##upperBound (Js.string "d") in
             let req = store##getAll_query query in
 
             req##.onerror := Dom.handler (fun _ ->
