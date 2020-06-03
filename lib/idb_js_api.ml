@@ -83,6 +83,8 @@ class type ['a] objectStore = object
   method openCursor : 'a Js.t openCursorRequest Js.t Js.meth
   method keyPath : key Js.readonly_prop
   method autoIncrement : bool Js.t Js.readonly_prop
+  method add_object : 'a Js.t -> key requestWithResult Js.t Js.meth
+  method put_object : 'a Js.t -> key requestWithResult Js.t Js.meth
 end
 
 class type ['a] transaction = object
