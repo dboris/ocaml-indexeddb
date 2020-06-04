@@ -64,7 +64,7 @@ module type STORE = sig
 
   val get : store -> key -> content option Lwt.t
 
-  val get_all : ?query:key_range -> store -> content array Lwt.t
+  val get_all : ?query:key_range -> store -> content list Lwt.t
 
   val remove : store -> key -> unit Lwt.t
 
@@ -111,7 +111,7 @@ module type STORE_POLY = sig
 
   val get : 'a store -> key -> 'a content option Lwt.t
 
-  val get_all : ?query:key_range -> 'a store -> 'a content array Lwt.t
+  val get_all : ?query:key_range -> 'a store -> 'a content list Lwt.t
 
   val remove : 'a store -> key -> unit Lwt.t
 

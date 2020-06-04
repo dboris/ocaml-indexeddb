@@ -262,8 +262,8 @@ module Unsafe = struct
     request##.onsuccess :=
       Dom.handler @@ fun _event ->
       Js.Optdef.case request##.result
-        (fun () -> [||])
-        Js.to_array
+        (fun () -> [])
+        (fun result -> result |> Js.to_array |> Array.to_list)
       |> Lwt.wakeup set_r;
       Js._true
 
@@ -359,7 +359,7 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
 
   let get_all ?query store =
     Unsafe.get_all ?query store
-    |> Lwt.map (Array.map C.to_content)
+    |> Lwt.map (List.map C.to_content)
 
   let remove store key =
     Unsafe.remove store (C.of_key key)
@@ -408,7 +408,7 @@ module Json = struct
 
   let get_all ?query store =
     Lwt.map
-      (Array.map Json.unsafe_input)
+      (List.map Json.unsafe_input)
       (Unsafe.get_all ?query store)
 
   let remove = Unsafe.remove

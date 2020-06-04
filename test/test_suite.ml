@@ -179,9 +179,9 @@ let test_get_all wrapper =
     Lwt.async @@ fun () ->
         let%lwt db = Idb_lwt.make db_name ~version:2 ~init in
         let store = Idb_lwt.Unsafe.store db store_name in
-        let%lwt (result : Js.Unsafe.any array) = Idb_lwt.Unsafe.get_all store in
+        let%lwt (result : Js.Unsafe.any list) = Idb_lwt.Unsafe.get_all store in
         wrapper (fun () ->
-            assert_true ((Array.length result) > 0));
+            assert_true ((List.length result) > 0));
         Lwt.return ()
 
 let test_get_all_query wrapper =
@@ -194,10 +194,9 @@ let test_get_all_query wrapper =
     Lwt.async @@ fun () ->
         let%lwt db = Idb_lwt.make db_name ~version:2 ~init in
         let store = Idb_store.store db store_name in
-        let%lwt (result : Js.Unsafe.any array) = Idb_store.get_all ~query store in
-        Log.console##log result;
+        let%lwt (result : Js.Unsafe.any list) = Idb_store.get_all ~query store in
         wrapper (fun () ->
-            assert_equal (Array.length result) 2);
+            assert_equal (List.length result) 2);
         Lwt.return ()
 
 let js_api_tests =
