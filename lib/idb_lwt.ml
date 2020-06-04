@@ -130,6 +130,26 @@ module Unsafe = struct
 
   type 'a content = 'a Js.t
 
+  type key_range = Idb.keyRange Js.t
+
+  let key_range_bound ?lower_open ?upper_open lower upper =
+    let lower_open = Option.map Js.bool lower_open
+    and upper_open = Option.map Js.bool upper_open
+    in
+    match lower_open, upper_open with
+    | Some lo, Some uo ->
+      Idb.keyRange##bound_lowerAndUpperOpen lower upper lo uo
+    | Some lo, None ->
+      Idb.keyRange##bound_lowerOpen lower upper lo
+    | None, Some uo ->
+      Idb.keyRange##bound_lowerAndUpperOpen lower upper Js._false uo
+    | None, None ->
+      Idb.keyRange##bound lower upper
+
+  (* let key_range_lower_bound : ?_open:bool -> key -> key_range
+  let key_range_upper_bound : ?_open:bool -> key -> key_range
+  let key_range_only : key -> key_range *)
+
   let store db store_name = { db ; store_name ; ro_trans = None }
 
   let rec trans_ro (t : _ store) setup =
@@ -217,9 +237,15 @@ module Unsafe = struct
       |> Lwt.wakeup set_r;
       Js._true
 
-  let get_all t =
+  let get_all ?query t =
     trans_ro t @@ fun store set_r ->
-    let request = store##getAll in
+    let request =
+      match query with
+      | Some query ->
+        store##getAll_query query
+      | None ->
+        store##getAll
+    in
     request##.onsuccess :=
       Dom.handler @@ fun _event ->
       Js.Optdef.case request##.result
@@ -334,6 +360,10 @@ module Json = struct
 
   type 'a content = 'a
 
+  type key_range = Unsafe.key_range
+
+  let key_range_bound = Unsafe.key_range_bound
+
   let set store key content =
     Unsafe.set store key (Json.output content)
 
@@ -342,10 +372,10 @@ module Json = struct
       (Option.map Json.unsafe_input)
       (Unsafe.get store key)
 
-  let get_all store =
+  let get_all ?query store =
     Lwt.map
       (Array.map Json.unsafe_input)
-      (Unsafe.get_all store)
+      (Unsafe.get_all ?query store)
 
   let remove = Unsafe.remove
 

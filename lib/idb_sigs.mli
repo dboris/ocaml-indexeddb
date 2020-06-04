@@ -93,13 +93,19 @@ module type STORE_POLY = sig
   type key
   type 'a content
 
+  type key_range
+  val key_range_bound : ?lower_open:bool -> ?upper_open:bool -> key -> key -> key_range
+  (* val key_range_lower_bound : ?_open:bool -> key -> key_range
+  val key_range_upper_bound : ?_open:bool -> key -> key_range
+  val key_range_only : key -> key_range *)
+
   val store : db -> store_name -> 'a store
 
   val set : 'a store -> key -> 'a content -> unit Lwt.t
 
   val get : 'a store -> key -> 'a content option Lwt.t
 
-  val get_all : 'a store -> 'a content array Lwt.t
+  val get_all : ?query:key_range -> 'a store -> 'a content array Lwt.t
 
   val remove : 'a store -> key -> unit Lwt.t
 
