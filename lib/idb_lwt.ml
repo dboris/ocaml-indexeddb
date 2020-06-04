@@ -300,6 +300,10 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
     |> Unsafe.get store
     |> Lwt.map (Option.map C.to_content)
 
+  let get_all store =
+    Unsafe.get_all store
+    |> Lwt.map (Array.map C.to_content)
+
   let remove store key =
     Unsafe.remove store (C.of_key key)
 

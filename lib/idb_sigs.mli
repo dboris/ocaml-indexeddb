@@ -58,6 +58,8 @@ module type STORE = sig
 
   val get : store -> key -> content option Lwt.t
 
+  val get_all : store -> content array Lwt.t
+
   val remove : store -> key -> unit Lwt.t
 
   (** If [test current_value] for returns true for the current value
