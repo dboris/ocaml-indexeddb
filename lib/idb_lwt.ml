@@ -146,9 +146,22 @@ module Unsafe = struct
     | None, None ->
       Idb.keyRange##bound lower upper
 
-  (* let key_range_lower_bound : ?_open:bool -> key -> key_range
-  let key_range_upper_bound : ?_open:bool -> key -> key_range
-  let key_range_only : key -> key_range *)
+  let key_range_lower_bound ?_open lower =
+    match _open with
+    | Some _open ->
+      Idb.keyRange##lowerBound_open lower (Js.bool _open)
+    | None ->
+      Idb.keyRange##lowerBound lower
+
+  let key_range_upper_bound ?_open upper =
+    match _open with
+    | Some _open ->
+      Idb.keyRange##upperBound_open upper (Js.bool _open)
+    | None ->
+      Idb.keyRange##upperBound upper
+
+  let key_range_only key =
+    Idb.keyRange##only key
 
   let store db store_name = { db ; store_name ; ro_trans = None }
 
@@ -318,6 +331,24 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
 
   type content = C.content
 
+  type key_range = Unsafe.key_range
+
+  let key_range_bound ?lower_open ?upper_open lower upper =
+    Unsafe.key_range_bound
+      ?lower_open
+      ?upper_open
+      (C.of_key lower)
+      (C.of_key upper)
+
+  let key_range_lower_bound ?_open lower =
+    Unsafe.key_range_lower_bound ?_open (C.of_key lower)
+
+  let key_range_upper_bound ?_open upper =
+    Unsafe.key_range_upper_bound ?_open (C.of_key upper)
+
+  let key_range_only key =
+    Unsafe.key_range_only (C.of_key key)
+
   let set store key content =
     Unsafe.set store (C.of_key key) (C.of_content content)
 
@@ -326,8 +357,8 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
     |> Unsafe.get store
     |> Lwt.map (Option.map C.to_content)
 
-  let get_all store =
-    Unsafe.get_all store
+  let get_all ?query store =
+    Unsafe.get_all ?query store
     |> Lwt.map (Array.map C.to_content)
 
   let remove store key =
@@ -363,6 +394,9 @@ module Json = struct
   type key_range = Unsafe.key_range
 
   let key_range_bound = Unsafe.key_range_bound
+  let key_range_lower_bound = Unsafe.key_range_lower_bound
+  let key_range_upper_bound = Unsafe.key_range_upper_bound
+  let key_range_only = Unsafe.key_range_only
 
   let set store key content =
     Unsafe.set store key (Json.output content)
