@@ -97,6 +97,8 @@ module type STORE_POLY = sig
 
   val get : 'a store -> key -> 'a content option Lwt.t
 
+  val get_all : 'a store -> 'a content array Lwt.t
+
   val remove : 'a store -> key -> unit Lwt.t
 
   (** If [test current_value] for returns true for the current value

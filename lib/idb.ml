@@ -86,7 +86,12 @@ end
 class type keyRange_constr = object
   method bound : key -> key -> keyRange Js.t Js.meth
   method bound_lowerOpen : key -> key -> bool Js.t -> keyRange Js.t Js.meth
-  method bound_lowerAndUpperOpen : key -> key -> bool Js.t -> bool Js.t -> keyRange Js.t Js.meth
+  method bound_lowerAndUpperOpen :
+    key ->
+    key ->
+    bool Js.t ->
+    bool Js.t ->
+    keyRange Js.t Js.meth
   method lowerBound : key -> keyRange Js.t Js.meth
   method lowerBound_open : key -> bool Js.t -> keyRange Js.t Js.meth
   method upperBound : key -> keyRange Js.t Js.meth
@@ -108,14 +113,14 @@ class type ['a] objectStore = object
   method autoIncrement : bool Js.t Js.readonly_prop
   method add_object : 'a Js.t -> key requestWithResult Js.t Js.meth
   method put_object : 'a Js.t -> key requestWithResult Js.t Js.meth
-  method getAll : 'a Js.js_array Js.t requestWithResult Js.t Js.meth
+  method getAll : 'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
   method getAll_query :
     keyRange Js.t ->
-    'a Js.js_array Js.t requestWithResult Js.t Js.meth
+    'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
   method getAll_queryAndCount :
     keyRange Js.t ->
     int Js.t ->
-    'a Js.js_array Js.t requestWithResult Js.t Js.meth
+    'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
 end
 
 class type ['a] transaction = object

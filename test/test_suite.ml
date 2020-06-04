@@ -171,6 +171,19 @@ let test_getAll_query wrapper =
 
         Js._true)
 
+let test_get_all wrapper =
+    let db_name = Idb_lwt.db_name "test-db"
+    and store_name = Idb_lwt.store_name "test-store"
+    and init _ = ()
+    in
+    Lwt.async @@ fun () ->
+        let%lwt db = Idb_lwt.make db_name ~version:2 ~init in
+        let store = Idb_lwt.Unsafe.store db store_name in
+        let%lwt (result : Js.Unsafe.any array) = Idb_lwt.Unsafe.get_all store in
+        wrapper (fun () ->
+            assert_true ((Array.length result) > 0));
+        Lwt.return ()
+
 let js_api_tests =
     "js_api" >::: [
         (* "test_fail" >:: test_fail; *)
@@ -182,4 +195,9 @@ let js_api_tests =
         "test_keyRange_constr_lowerBound" >:: test_keyRange_constr_lowerBound;
         "test_keyRange_constr_only" >:: test_keyRange_constr_only;
         "test_getAll_query" >:~ test_getAll_query;
+    ]
+
+let idb_lwt_tests =
+    "idb_lwt" >::: [
+        "test_get_all" >:~ test_get_all;
     ]

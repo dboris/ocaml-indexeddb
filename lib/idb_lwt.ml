@@ -217,6 +217,17 @@ module Unsafe = struct
       |> Lwt.wakeup set_r;
       Js._true
 
+  let get_all t =
+    trans_ro t @@ fun store set_r ->
+    let request = store##getAll in
+    request##.onsuccess :=
+      Dom.handler @@ fun _event ->
+      Js.Optdef.case request##.result
+        (fun () -> [||])
+        Js.to_array
+      |> Lwt.wakeup set_r;
+      Js._true
+
   let remove t key =
     trans_rw t @@ fun store ->
     ignore (store##delete key)
@@ -326,6 +337,11 @@ module Json = struct
     Lwt.map
       (Option.map Json.unsafe_input)
       (Unsafe.get store key)
+
+  let get_all store =
+    Lwt.map
+      (Array.map Json.unsafe_input)
+      (Unsafe.get_all store)
 
   let remove = Unsafe.remove
 
