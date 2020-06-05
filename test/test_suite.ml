@@ -171,6 +171,41 @@ let test_getAll_query wrapper =
 
         Js._true)
 
+let test_openCursor_query wrapper =
+    let store_name = Js.string "test-store"
+    and factory = get_factory () in
+    let request = factory##_open db_name 2 in
+
+    request##.onerror := Dom.handler (fun _ -> wrapper test_fail; Js._true);
+
+    request##.onsuccess := Dom.handler (fun _ ->
+        let trans =
+            request##.result##transaction
+                (Js.array [| store_name |])
+                (Js.string "readonly")
+        in
+        let store = trans##objectStore store_name in
+        let query = Idb.keyRange##upperBound (Js.string "d") in
+        let req = store##openCursor_query query in
+        let results : Js.Unsafe.any list ref = ref [] in
+
+        req##.onerror := Dom.handler (fun _ -> wrapper test_fail; Js._true);
+
+        req##.onsuccess := Dom.handler (fun _ ->
+            Js.Opt.iter req##.result
+                (fun cursor ->
+                    results := cursor##.value :: !results;
+                    cursor##continue);
+            Js._true);
+
+        trans##.onerror := Dom.handler (fun _ -> wrapper test_fail; Js._true);
+
+        trans##.oncomplete := Dom.handler (fun _ ->
+            wrapper (fun () -> assert_equal (List.length !results) 2);
+            Js._true);
+
+        Js._true)
+
 let test_get_all wrapper =
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
@@ -245,6 +280,7 @@ let js_api_tests =
         "test_keyRange_constr_lowerBound" >:: test_keyRange_constr_lowerBound;
         "test_keyRange_constr_only" >:: test_keyRange_constr_only;
         "test_getAll_query" >:~ test_getAll_query;
+        "test_openCursor_query" >:~ test_openCursor_query;
     ]
 
 let idb_lwt_tests =

@@ -87,11 +87,7 @@ class type keyRange_constr = object
   method bound : key -> key -> keyRange Js.t Js.meth
   method bound_lowerOpen : key -> key -> bool Js.t -> keyRange Js.t Js.meth
   method bound_lowerAndUpperOpen :
-    key ->
-    key ->
-    bool Js.t ->
-    bool Js.t ->
-    keyRange Js.t Js.meth
+    key -> key -> bool Js.t -> bool Js.t -> keyRange Js.t Js.meth
   method lowerBound : key -> keyRange Js.t Js.meth
   method lowerBound_open : key -> bool Js.t -> keyRange Js.t Js.meth
   method upperBound : key -> keyRange Js.t Js.meth
@@ -104,22 +100,25 @@ let keyRange_constr = Js.Unsafe.global##._IDBKeyRange
 let keyRange : keyRange_constr Js.t = keyRange_constr
 
 class type ['a] objectStore = object
+  method keyPath : key Js.readonly_prop
+  method autoIncrement : bool Js.t Js.readonly_prop
   method add : 'a Js.t -> key -> request Js.t Js.meth
   method put : 'a Js.t -> key -> request Js.t Js.meth
   method delete : key -> request Js.t Js.meth
   method get : key -> 'a Js.t requestWithResult Js.t Js.meth
   method openCursor : 'a Js.t openCursorRequest Js.t Js.meth
-  method keyPath : key Js.readonly_prop
-  method autoIncrement : bool Js.t Js.readonly_prop
+  method openCursor_query :
+    keyRange Js.t -> 'a Js.t openCursorRequest Js.t Js.meth
+  method openCursor_queryAndDirection :
+    keyRange Js.t Js.Opt.t -> Js.js_string Js.t ->
+    'a Js.t openCursorRequest Js.t Js.meth
   method add_object : 'a Js.t -> key requestWithResult Js.t Js.meth
   method put_object : 'a Js.t -> key requestWithResult Js.t Js.meth
   method getAll : 'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
   method getAll_query :
-    keyRange Js.t ->
-    'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
+    keyRange Js.t -> 'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
   method getAll_queryAndCount :
-    keyRange Js.t Js.Opt.t ->
-    int ->
+    keyRange Js.t Js.Opt.t -> int ->
     'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
 end
 
@@ -137,7 +136,8 @@ class type database = object
   method createObjectStore :
     'a . 'a store_name -> 'a objectStore Js.t Js.meth
   method createObjectStore_withOptions :
-    'a . 'a store_name -> createObjectStoreOptions Js.t -> 'a objectStore Js.t Js.meth
+    'a . 'a store_name -> createObjectStoreOptions Js.t ->
+    'a objectStore Js.t Js.meth
   method deleteObjectStore :
     'a . 'a store_name -> unit Js.meth
   method onerror :
