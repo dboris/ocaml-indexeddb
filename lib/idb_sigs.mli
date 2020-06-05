@@ -53,7 +53,12 @@ module type STORE = sig
   type content
 
   type key_range
-  val key_range_bound : ?lower_open:bool -> ?upper_open:bool -> key -> key -> key_range
+  val key_range_bound :
+    ?lower_open:bool ->
+    ?upper_open:bool ->
+    key ->
+    key ->
+    key_range
   val key_range_lower_bound : ?_open:bool -> key -> key_range
   val key_range_upper_bound : ?_open:bool -> key -> key_range
   val key_range_only : key -> key_range
@@ -64,7 +69,11 @@ module type STORE = sig
 
   val get : store -> key -> content option Lwt.t
 
-  val get_all : ?query:key_range -> store -> content list Lwt.t
+  val get_all :
+    ?query:key_range ->
+    ?count:int ->
+    store ->
+    content list Lwt.t
 
   val remove : store -> key -> unit Lwt.t
 
@@ -100,7 +109,12 @@ module type STORE_POLY = sig
   type 'a content
 
   type key_range
-  val key_range_bound : ?lower_open:bool -> ?upper_open:bool -> key -> key -> key_range
+  val key_range_bound :
+    ?lower_open:bool ->
+    ?upper_open:bool ->
+    key ->
+    key ->
+    key_range
   val key_range_lower_bound : ?_open:bool -> key -> key_range
   val key_range_upper_bound : ?_open:bool -> key -> key_range
   val key_range_only : key -> key_range
@@ -111,7 +125,11 @@ module type STORE_POLY = sig
 
   val get : 'a store -> key -> 'a content option Lwt.t
 
-  val get_all : ?query:key_range -> 'a store -> 'a content list Lwt.t
+  val get_all :
+    ?query:key_range ->
+    ?count:int ->
+    'a store ->
+    'a content list Lwt.t
 
   val remove : 'a store -> key -> unit Lwt.t
 

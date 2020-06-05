@@ -250,13 +250,18 @@ module Unsafe = struct
       |> Lwt.wakeup set_r;
       Js._true
 
-  let get_all ?query t =
+  let get_all ?query ?count t =
     trans_ro t @@ fun store set_r ->
     let request =
-      match query with
-      | Some query ->
+      match query, count with
+      | Some query, Some count ->
+        store##getAll_queryAndCount query count
+      | Some query, None ->
         store##getAll_query query
-      | None ->
+      | None, Some _ ->
+        (* FIXME is that true? *)
+        raise (Invalid_argument "get_all with count requires query")
+      | None, None ->
         store##getAll
     in
     request##.onsuccess :=
@@ -357,8 +362,8 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
     |> Unsafe.get store
     |> Lwt.map (Option.map C.to_content)
 
-  let get_all ?query store =
-    Unsafe.get_all ?query store
+  let get_all ?query ?count store =
+    Unsafe.get_all ?query ?count store
     |> Lwt.map (List.map C.to_content)
 
   let remove store key =
@@ -406,10 +411,10 @@ module Json = struct
       (Option.map Json.unsafe_input)
       (Unsafe.get store key)
 
-  let get_all ?query store =
+  let get_all ?query ?count store =
     Lwt.map
       (List.map Json.unsafe_input)
-      (Unsafe.get_all ?query store)
+      (Unsafe.get_all ?query ?count store)
 
   let remove = Unsafe.remove
 
