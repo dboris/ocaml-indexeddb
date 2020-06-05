@@ -90,6 +90,16 @@ module type STORE = sig
     bool Lwt.t
 
   val fold :
+    ?query:key_range ->
+    ?unique:bool ->
+    ('acc -> key -> content -> 'acc) ->
+    'acc ->
+    store ->
+    'acc Lwt.t
+
+  val fold_right :
+    ?query:key_range ->
+    ?unique:bool ->
     ('acc -> key -> content -> 'acc) ->
     'acc ->
     store ->
@@ -146,6 +156,16 @@ module type STORE_POLY = sig
     bool Lwt.t
 
   val fold :
+    ?query:key_range ->
+    ?unique:bool ->
+    ('acc -> key -> 'a content -> 'acc) ->
+    'acc ->
+    'a store ->
+    'acc Lwt.t
+
+  val fold_right :
+    ?query:key_range ->
+    ?unique:bool ->
     ('acc -> key -> 'a content -> 'acc) ->
     'acc ->
     'a store ->
