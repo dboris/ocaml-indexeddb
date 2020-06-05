@@ -255,12 +255,11 @@ module Unsafe = struct
     let request =
       match query, count with
       | Some query, Some count ->
-        store##getAll_queryAndCount query count
+        store##getAll_queryAndCount (Js.Opt.return query) count
       | Some query, None ->
         store##getAll_query query
-      | None, Some _ ->
-        (* FIXME is that true? *)
-        raise (Invalid_argument "get_all with count requires query")
+      | None, Some count ->
+        store##getAll_queryAndCount Js.Opt.empty count
       | None, None ->
         store##getAll
     in

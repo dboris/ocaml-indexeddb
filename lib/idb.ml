@@ -118,7 +118,7 @@ class type ['a] objectStore = object
     keyRange Js.t ->
     'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
   method getAll_queryAndCount :
-    keyRange Js.t ->
+    keyRange Js.t Js.Opt.t ->
     int ->
     'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
 end

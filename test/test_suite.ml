@@ -201,6 +201,39 @@ let test_get_all_query wrapper =
             assert_equal (List.length result) 2);
         Lwt.return ()
 
+let test_get_all_query_and_count wrapper =
+    let module Idb_store = Idb_lwt.Unsafe in
+    let db_name = Idb_lwt.db_name "test-db"
+    and store_name = Idb_lwt.store_name "test-store"
+    and init _ = ()
+    and query = Idb_store.key_range_bound (Js.string "a") (Js.string "z")
+    and count = 3
+    in
+    Lwt.async @@ fun () ->
+        let%lwt db = Idb_lwt.make db_name ~version:2 ~init in
+        let store = Idb_store.store db store_name in
+        let%lwt (result : Js.Unsafe.any list) =
+            Idb_store.get_all ~query ~count store in
+        wrapper (fun () ->
+            assert_equal (List.length result) 3);
+        Lwt.return ()
+
+let test_get_all_count wrapper =
+    let module Idb_store = Idb_lwt.Unsafe in
+    let db_name = Idb_lwt.db_name "test-db"
+    and store_name = Idb_lwt.store_name "test-store"
+    and init _ = ()
+    and count = 3
+    in
+    Lwt.async @@ fun () ->
+        let%lwt db = Idb_lwt.make db_name ~version:2 ~init in
+        let store = Idb_store.store db store_name in
+        let%lwt (result : Js.Unsafe.any list) =
+            Idb_store.get_all ~count store in
+        wrapper (fun () ->
+            assert_equal (List.length result) 3);
+        Lwt.return ()
+
 let js_api_tests =
     "js_api" >::: [
         (* "test_fail" >:: test_fail; *)
@@ -218,4 +251,6 @@ let idb_lwt_tests =
     "idb_lwt" >::: [
         "test_get_all" >:~ test_get_all;
         "test_get_all_query" >:~ test_get_all_query;
+        "test_get_all_query_and_count" >:~ test_get_all_query_and_count;
+        "test_get_all_count" >:~ test_get_all_count;
     ]
