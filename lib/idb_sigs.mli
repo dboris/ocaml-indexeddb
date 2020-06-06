@@ -1,6 +1,8 @@
 (* Copyright (C) 2015, Thomas Leonard. See the LICENSE file for
    details. *)
 
+open Js_of_ocaml
+
 module type Js_string_conv = sig
 
   type key
@@ -50,11 +52,28 @@ module type STORE = sig
   type key
   type content
 
+  type key_range
+  val key_range_bound :
+    ?lower_open:bool ->
+    ?upper_open:bool ->
+    key ->
+    key ->
+    key_range
+  val key_range_lower_bound : ?_open:bool -> key -> key_range
+  val key_range_upper_bound : ?_open:bool -> key -> key_range
+  val key_range_only : key -> key_range
+
   val store : db -> store_name -> store
 
   val set : store -> key -> content -> unit Lwt.t
 
   val get : store -> key -> content option Lwt.t
+
+  val get_all :
+    ?query:key_range ->
+    ?count:int ->
+    store ->
+    content list Lwt.t
 
   val remove : store -> key -> unit Lwt.t
 
@@ -71,6 +90,16 @@ module type STORE = sig
     bool Lwt.t
 
   val fold :
+    ?query:key_range ->
+    ?unique:bool ->
+    ('acc -> key -> content -> 'acc) ->
+    'acc ->
+    store ->
+    'acc Lwt.t
+
+  val fold_right :
+    ?query:key_range ->
+    ?unique:bool ->
     ('acc -> key -> content -> 'acc) ->
     'acc ->
     store ->
@@ -89,11 +118,28 @@ module type STORE_POLY = sig
   type key
   type 'a content
 
+  type key_range
+  val key_range_bound :
+    ?lower_open:bool ->
+    ?upper_open:bool ->
+    key ->
+    key ->
+    key_range
+  val key_range_lower_bound : ?_open:bool -> key -> key_range
+  val key_range_upper_bound : ?_open:bool -> key -> key_range
+  val key_range_only : key -> key_range
+
   val store : db -> store_name -> 'a store
 
   val set : 'a store -> key -> 'a content -> unit Lwt.t
 
   val get : 'a store -> key -> 'a content option Lwt.t
+
+  val get_all :
+    ?query:key_range ->
+    ?count:int ->
+    'a store ->
+    'a content list Lwt.t
 
   val remove : 'a store -> key -> unit Lwt.t
 
@@ -110,6 +156,16 @@ module type STORE_POLY = sig
     bool Lwt.t
 
   val fold :
+    ?query:key_range ->
+    ?unique:bool ->
+    ('acc -> key -> 'a content -> 'acc) ->
+    'acc ->
+    'a store ->
+    'acc Lwt.t
+
+  val fold_right :
+    ?query:key_range ->
+    ?unique:bool ->
     ('acc -> key -> 'a content -> 'acc) ->
     'acc ->
     'a store ->
