@@ -271,6 +271,19 @@ module Unsafe = struct
       |> Lwt.wakeup set_r;
       Js._true
 
+  let bulk_get t keys =
+    trans_ro t @@ fun store set_r ->
+    let result = ref [] in
+    let get key =
+      let request = store##get key in
+      request##.onsuccess :=
+        Dom.handler @@ fun _event ->
+          result := (Js.Optdef.to_option request##.result) :: !result;
+        Js._true
+    in
+    List.iter get keys;
+    Lwt.wakeup set_r !result
+
   let remove t key =
     trans_rw t @@ fun store ->
     ignore (store##delete key)
@@ -391,6 +404,11 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
     Unsafe.get_all ?query ?count store
     |> Lwt.map (List.map C.to_content)
 
+  let bulk_get store keys =
+    List.map C.of_key keys
+    |> Unsafe.bulk_get store
+    |> Lwt.map (List.map (Option.map C.to_content))
+
   let remove store key =
     Unsafe.remove store (C.of_key key)
 
@@ -444,6 +462,11 @@ module Json = struct
     Lwt.map
       (List.map Json.unsafe_input)
       (Unsafe.get_all ?query ?count store)
+
+  let bulk_get store keys =
+    Lwt.map
+      (List.map (Option.map  Json.unsafe_input))
+      (Unsafe.bulk_get store keys)
 
   let remove = Unsafe.remove
 

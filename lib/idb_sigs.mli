@@ -75,6 +75,8 @@ module type STORE = sig
     store ->
     content list Lwt.t
 
+  val bulk_get : store -> key list -> content option list Lwt.t
+
   val remove : store -> key -> unit Lwt.t
 
   (** If [test current_value] for returns true for the current value
@@ -140,6 +142,8 @@ module type STORE_POLY = sig
     ?count:int ->
     'a store ->
     'a content list Lwt.t
+
+  val bulk_get : 'a store -> key list -> 'a content option list Lwt.t
 
   val remove : 'a store -> key -> unit Lwt.t
 
