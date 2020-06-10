@@ -19,8 +19,29 @@ type store_name = Js.js_string Js.t
 
 let store_name = Js.string
 
-let create_store (db : db) name =
-  ignore (db##createObjectStore name)
+type store_options = Idb.createObjectStoreOptions Js.t
+
+let store_options ?key_path ?auto_increment () =
+  let opts = Idb.createObjectStoreOptions () in
+  match key_path, auto_increment with
+  | Some _, Some _ ->
+    raise (Invalid_argument "Only one of key_path, auto_increment should be provided")
+  | Some key_path, None ->
+    opts##.keyPath := Js.string key_path;
+    opts
+  | None, Some auto_increment ->
+    opts##.autoIncrement := Js.bool auto_increment;
+    opts
+  | None, None ->
+    raise (Invalid_argument "At least one of key_path, auto_increment should be provided")
+
+let create_store ?options (db : db) name =
+  (match options with
+  | Some options ->
+    db##createObjectStore_withOptions name options
+  | None ->
+    db##createObjectStore name)
+  |> ignore
 
 let close db =
   db##close

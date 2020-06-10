@@ -1,5 +1,4 @@
-(* Copyright (C) 2015, Thomas Leonard. See the LICENSE file for
-   details. *)
+(* Copyright (C) 2015, Thomas Leonard. See the LICENSE file for details. *)
 
 open Js_of_ocaml
 
@@ -26,6 +25,13 @@ module type DB = sig
   type store_name
   val store_name : string -> store_name
 
+  type store_options
+  val store_options :
+    ?key_path:string ->
+    ?auto_increment:bool ->
+    unit ->
+    store_options
+
   (** Connect to database [db_name]. If it doesn't yet exist or is for
       an older version, calls [init] to initialise it first. *)
   val make :
@@ -39,7 +45,7 @@ module type DB = sig
 
   val delete_database : db_name -> unit Lwt.t
 
-  val create_store : db_upgrader -> store_name -> unit
+  val create_store : ?options:store_options -> db_upgrader -> store_name -> unit
 
 end
 

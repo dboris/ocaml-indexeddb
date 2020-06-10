@@ -309,6 +309,20 @@ let test_bulk_get wrapper =
             assert_true (Option.is_some (List.hd (List.tl result)));
         Lwt.return ()
 
+let test_create_store_with_options wrapper =
+    let module Idb_store = Idb_lwt.Unsafe in
+    let db_name = Idb_lwt.db_name "test-db"
+    and new_store_name = Idb_lwt.store_name "auto-incr-store"
+    in
+    Lwt.async @@ fun () ->
+        let init ~old_version:_ db =
+            let options = Idb_lwt.store_options ~auto_increment:true () in
+            Idb_lwt.create_store ~options db new_store_name;
+            wrapper Async.noop;
+        in
+        let%lwt _db = Idb_lwt.make db_name ~version:3 ~init in
+        Lwt.return ()
+
 let js_api_tests =
     "js_api" >::: [
         (* "test_fail" >:: test_fail; *)
@@ -331,4 +345,5 @@ let idb_lwt_tests =
         "test_get_all_count" >:~ test_get_all_count;
         "test_fold_query" >:~ test_fold_query;
         "test_bulk_get" >:~ test_bulk_get;
+        "test_create_store_with_options" >:~ test_create_store_with_options;
     ]
