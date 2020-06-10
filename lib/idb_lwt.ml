@@ -87,9 +87,10 @@ let make db_name ~version ~init =
          their connections before upgrading schema version.";
       Js._true
     );
-  request##.onupgradeneeded := Dom.handler (fun _event ->
+  request##.onupgradeneeded := Dom.handler (fun event ->
       try
-        init request##.result;
+        let old_version = event##.oldVersion in
+        init ~old_version request##.result;
         Js._true
       with ex ->
         (* Firefox throws the exception away and returns AbortError

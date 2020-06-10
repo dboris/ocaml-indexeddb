@@ -209,7 +209,7 @@ let test_openCursor_query wrapper =
 let test_get_all wrapper =
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     in
     Lwt.async @@ fun () ->
         let%lwt db = Idb_lwt.make db_name ~version:2 ~init in
@@ -224,7 +224,7 @@ let test_get_all_query wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     and query = Idb_store.key_range_bound (Js.string "a") (Js.string "d")
     in
     Lwt.async @@ fun () ->
@@ -240,7 +240,7 @@ let test_get_all_query_and_count wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     and query = Idb_store.key_range_bound (Js.string "a") (Js.string "z")
     and count = 3
     in
@@ -257,7 +257,7 @@ let test_get_all_count wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     and count = 3
     in
     Lwt.async @@ fun () ->
@@ -273,7 +273,7 @@ let test_fold_query wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     and query = Idb_store.key_range_bound (Js.string "a") (Js.string "d")
     in
     Lwt.async @@ fun () ->
@@ -294,7 +294,7 @@ let test_bulk_get wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     and keys = [Js.string "nah"; Js.string "bonjour"; Js.string "ciao"]
     in
     Lwt.async @@ fun () ->

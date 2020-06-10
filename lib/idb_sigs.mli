@@ -31,7 +31,7 @@ module type DB = sig
   val make :
     db_name ->
     version:int ->
-    init:(db_upgrader -> unit) ->
+    init:(old_version:int -> db_upgrader -> unit) ->
     db Lwt.t
 
   (** Begin closing the connection (returns immediately). *)
