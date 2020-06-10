@@ -75,6 +75,7 @@ module type STORE = sig
     store ->
     content list Lwt.t
 
+  (** Efficiently get multiple keys in a single transaction. *)
   val bulk_get : store -> key list -> content option list Lwt.t
 
   val remove : store -> key -> unit Lwt.t
@@ -143,6 +144,7 @@ module type STORE_POLY = sig
     'a store ->
     'a content list Lwt.t
 
+  (** Efficiently get multiple keys in a single transaction. *)
   val bulk_get : 'a store -> key list -> 'a content option list Lwt.t
 
   val remove : 'a store -> key -> unit Lwt.t
