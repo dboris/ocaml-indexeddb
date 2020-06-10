@@ -273,16 +273,18 @@ module Unsafe = struct
 
   let bulk_get t keys =
     trans_ro t @@ fun store set_r ->
-    let result = ref [] in
-    let get key =
+    let results = ref []
+    and count = List.length keys
+    in
+    let get i key =
       let request = store##get key in
       request##.onsuccess :=
         Dom.handler @@ fun _event ->
-          result := (Js.Optdef.to_option request##.result) :: !result;
+          Js.Optdef.to_option request##.result :: !results
+          |> if Int.equal (i + 1) count then Lwt.wakeup set_r else (:=) results;
         Js._true
     in
-    List.iter get keys;
-    Lwt.wakeup set_r !result
+    List.iteri get keys
 
   let remove t key =
     trans_rw t @@ fun store ->
