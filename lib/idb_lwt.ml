@@ -302,7 +302,7 @@ module Unsafe = struct
       let request = store##get key in
       request##.onsuccess :=
         Dom.handler @@ fun _event ->
-          Js.Optdef.to_option request##.result :: !results
+          (key, Js.Optdef.to_option request##.result) :: !results
           |> if Int.equal (i + 1) count then Lwt.wakeup set_r else (:=) results;
         Js._true
     in
@@ -435,7 +435,7 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
   let bulk_get store keys =
     List.map C.of_key keys
     |> Unsafe.bulk_get store
-    |> Lwt.map (List.map (Option.map C.to_content))
+    |> Lwt.map (List.map (fun (key, value) -> C.to_key key, Option.map C.to_content value))
 
   let bulk_set store items =
     items
@@ -498,7 +498,7 @@ module Json = struct
 
   let bulk_get store keys =
     Lwt.map
-      (List.map (Option.map  Json.unsafe_input))
+      (List.map (fun (key, value) -> key, Option.map Json.unsafe_input value))
       (Unsafe.bulk_get store keys)
 
   let bulk_set store items =

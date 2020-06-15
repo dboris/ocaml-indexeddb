@@ -82,7 +82,7 @@ module type STORE = sig
     content list Lwt.t
 
   (** Efficiently get multiple keys in a single transaction. *)
-  val bulk_get : store -> key list -> content option list Lwt.t
+  val bulk_get : store -> key list -> (key * content option) list Lwt.t
 
   (** Efficiently set multiple items in a single transaction. *)
   val bulk_set : store -> (key * content) list -> unit Lwt.t
@@ -154,7 +154,7 @@ module type STORE_POLY = sig
     'a content list Lwt.t
 
   (** Efficiently get multiple keys in a single transaction. *)
-  val bulk_get : 'a store -> key list -> 'a content option list Lwt.t
+  val bulk_get : 'a store -> key list -> (key * 'a content option) list Lwt.t
 
   (** Efficiently set multiple items in a single transaction. *)
   val bulk_set : 'a store -> (key * 'a content) list -> unit Lwt.t

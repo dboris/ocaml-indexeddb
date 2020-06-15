@@ -308,13 +308,13 @@ let test_bulk_get wrapper =
     Lwt.async @@ fun () ->
         let%lwt db = Idb_lwt.make db_name ~version:2 ~init in
         let store = Idb_store.store db store_name in
-        let%lwt (result : Js.Unsafe.any option list) =
+        let%lwt (result : (Idb_store.key * Js.Unsafe.any option) list) =
             Idb_store.bulk_get store keys
         in
         wrapper (fun () ->
             assert_equal (List.length result) 3);
-            assert_true (Option.is_none (List.hd result));
-            assert_true (Option.is_some (List.hd (List.tl result)));
+            assert_true (Option.is_none (snd (List.hd result)));
+            assert_true (Option.is_some (snd (List.hd (List.tl result))));
         Lwt.return ()
 
 let test_create_store_with_options wrapper =
