@@ -1,6 +1,6 @@
 open Js_of_ocaml
 open Webtest.Suite
-open Lwt.Infix
+(* open Lwt.Infix *)
 
 open Indexeddb
 
@@ -17,12 +17,7 @@ let db_name = Js.string "test-db"
 
 let reset_db () =
     let factory = get_factory () in
-    factory##deleteDatabase db_name |> ignore;
-    Lwt.async @@ fun () ->
-        let db_name = Idb_lwt.db_name "test-db"
-        and init ~old_version:_ _db = ()
-        in
-        Idb_lwt.make db_name ~version:1 ~init >|= ignore
+    factory##deleteDatabase db_name |> ignore
 
 (* Reset db before each test run *)
 let () = reset_db ()

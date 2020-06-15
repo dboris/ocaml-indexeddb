@@ -84,6 +84,9 @@ module type STORE = sig
   (** Efficiently get multiple keys in a single transaction. *)
   val bulk_get : store -> key list -> content option list Lwt.t
 
+  (** Efficiently set multiple items in a single transaction. *)
+  val bulk_set : store -> (key * content) list -> unit Lwt.t
+
   val remove : store -> key -> unit Lwt.t
 
   (** If [test current_value] for returns true for the current value
@@ -152,6 +155,9 @@ module type STORE_POLY = sig
 
   (** Efficiently get multiple keys in a single transaction. *)
   val bulk_get : 'a store -> key list -> 'a content option list Lwt.t
+
+  (** Efficiently set multiple items in a single transaction. *)
+  val bulk_set : 'a store -> (key * 'a content) list -> unit Lwt.t
 
   val remove : 'a store -> key -> unit Lwt.t
 

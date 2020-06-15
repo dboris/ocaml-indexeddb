@@ -308,6 +308,10 @@ module Unsafe = struct
     in
     List.iteri get keys
 
+  let bulk_set t items =
+    trans_rw t @@ fun store ->
+    List.iter (fun (key, value) -> ignore (store##put value key)) items
+
   let remove t key =
     trans_rw t @@ fun store ->
     ignore (store##delete key)
@@ -433,6 +437,11 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
     |> Unsafe.bulk_get store
     |> Lwt.map (List.map (Option.map C.to_content))
 
+  let bulk_set store items =
+    items
+    |> List.map (fun (key, content) -> (C.of_key key), (C.of_content content))
+    |> Unsafe.bulk_set store
+
   let remove store key =
     Unsafe.remove store (C.of_key key)
 
@@ -491,6 +500,11 @@ module Json = struct
     Lwt.map
       (List.map (Option.map  Json.unsafe_input))
       (Unsafe.bulk_get store keys)
+
+  let bulk_set store items =
+    items
+    |> List.map (fun (key, content) -> key, Json.output content)
+    |> Unsafe.bulk_set store
 
   let remove = Unsafe.remove
 
