@@ -1,5 +1,4 @@
-(* Copyright (C) 2015, Thomas Leonard. See the LICENSE file for
-   details. *)
+(* Copyright (C) 2015, Thomas Leonard. See the LICENSE file for details. *)
 
 open Js_of_ocaml
 
@@ -26,12 +25,19 @@ module type DB = sig
   type store_name
   val store_name : string -> store_name
 
+  type store_options
+  val store_options :
+    ?key_path:string ->
+    ?auto_increment:bool ->
+    unit ->
+    store_options
+
   (** Connect to database [db_name]. If it doesn't yet exist or is for
       an older version, calls [init] to initialise it first. *)
   val make :
     db_name ->
     version:int ->
-    init:(db_upgrader -> unit) ->
+    init:(old_version:int -> db_upgrader -> unit) ->
     db Lwt.t
 
   (** Begin closing the connection (returns immediately). *)
@@ -39,7 +45,7 @@ module type DB = sig
 
   val delete_database : db_name -> unit Lwt.t
 
-  val create_store : db_upgrader -> store_name -> unit
+  val create_store : ?options:store_options -> db_upgrader -> store_name -> unit
 
 end
 
@@ -74,6 +80,12 @@ module type STORE = sig
     ?count:int ->
     store ->
     content list Lwt.t
+
+  (** Efficiently get multiple keys in a single transaction. *)
+  val bulk_get : store -> key list -> (key * content option) list Lwt.t
+
+  (** Efficiently set multiple items in a single transaction. *)
+  val bulk_set : store -> (key * content) list -> unit Lwt.t
 
   val remove : store -> key -> unit Lwt.t
 
@@ -140,6 +152,12 @@ module type STORE_POLY = sig
     ?count:int ->
     'a store ->
     'a content list Lwt.t
+
+  (** Efficiently get multiple keys in a single transaction. *)
+  val bulk_get : 'a store -> key list -> (key * 'a content option) list Lwt.t
+
+  (** Efficiently set multiple items in a single transaction. *)
+  val bulk_set : 'a store -> (key * 'a content) list -> unit Lwt.t
 
   val remove : 'a store -> key -> unit Lwt.t
 

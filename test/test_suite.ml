@@ -1,5 +1,6 @@
 open Js_of_ocaml
 open Webtest.Suite
+(* open Lwt.Infix *)
 
 open Indexeddb
 
@@ -13,6 +14,13 @@ let get_factory () =
         (fun () -> failwith "IndexedDB not available")
 
 let db_name = Js.string "test-db"
+
+let reset_db () =
+    let factory = get_factory () in
+    factory##deleteDatabase db_name |> ignore
+
+(* Reset db before each test run *)
+let () = reset_db ()
 
 let test_fail () = assert_true false
 let test_success () = assert_true true
@@ -209,7 +217,7 @@ let test_openCursor_query wrapper =
 let test_get_all wrapper =
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     in
     Lwt.async @@ fun () ->
         let%lwt db = Idb_lwt.make db_name ~version:2 ~init in
@@ -224,7 +232,7 @@ let test_get_all_query wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     and query = Idb_store.key_range_bound (Js.string "a") (Js.string "d")
     in
     Lwt.async @@ fun () ->
@@ -240,7 +248,7 @@ let test_get_all_query_and_count wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     and query = Idb_store.key_range_bound (Js.string "a") (Js.string "z")
     and count = 3
     in
@@ -257,7 +265,7 @@ let test_get_all_count wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     and count = 3
     in
     Lwt.async @@ fun () ->
@@ -273,7 +281,7 @@ let test_fold_query wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init _ = ()
+    and init ~old_version:_ _ = ()
     and query = Idb_store.key_range_bound (Js.string "a") (Js.string "d")
     in
     Lwt.async @@ fun () ->
@@ -288,6 +296,39 @@ let test_fold_query wrapper =
         in
         wrapper (fun () ->
             assert_equal (List.length result) 2);
+        Lwt.return ()
+
+let test_bulk_get wrapper =
+    let module Idb_store = Idb_lwt.Unsafe in
+    let db_name = Idb_lwt.db_name "test-db"
+    and store_name = Idb_lwt.store_name "test-store"
+    and init ~old_version:_ _ = ()
+    and keys = [Js.string "nah"; Js.string "bonjour"; Js.string "ciao"]
+    in
+    Lwt.async @@ fun () ->
+        let%lwt db = Idb_lwt.make db_name ~version:2 ~init in
+        let store = Idb_store.store db store_name in
+        let%lwt (result : (Idb_store.key * Js.Unsafe.any option) list) =
+            Idb_store.bulk_get store keys
+        in
+        wrapper (fun () ->
+            assert_equal (List.length result) 3);
+            assert_true (Option.is_none (snd (List.hd result)));
+            assert_true (Option.is_some (snd (List.hd (List.tl result))));
+        Lwt.return ()
+
+let test_create_store_with_options wrapper =
+    let module Idb_store = Idb_lwt.Unsafe in
+    let db_name = Idb_lwt.db_name "test-db"
+    and new_store_name = Idb_lwt.store_name "auto-incr-store"
+    in
+    Lwt.async @@ fun () ->
+        let init ~old_version:_ db =
+            let options = Idb_lwt.store_options ~auto_increment:true () in
+            Idb_lwt.create_store ~options db new_store_name;
+            wrapper Async.noop;
+        in
+        let%lwt _db = Idb_lwt.make db_name ~version:3 ~init in
         Lwt.return ()
 
 let js_api_tests =
@@ -311,4 +352,6 @@ let idb_lwt_tests =
         "test_get_all_query_and_count" >:~ test_get_all_query_and_count;
         "test_get_all_count" >:~ test_get_all_count;
         "test_fold_query" >:~ test_fold_query;
+        "test_bulk_get" >:~ test_bulk_get;
+        "test_create_store_with_options" >:~ test_create_store_with_options;
     ]

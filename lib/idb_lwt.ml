@@ -19,8 +19,29 @@ type store_name = Js.js_string Js.t
 
 let store_name = Js.string
 
-let create_store (db : db) name =
-  ignore (db##createObjectStore name)
+type store_options = Idb.createObjectStoreOptions Js.t
+
+let store_options ?key_path ?auto_increment () =
+  let opts = Idb.createObjectStoreOptions () in
+  match key_path, auto_increment with
+  | Some _, Some _ ->
+    raise (Invalid_argument "Only one of key_path, auto_increment should be provided")
+  | Some key_path, None ->
+    opts##.keyPath := Js.string key_path;
+    opts
+  | None, Some auto_increment ->
+    opts##.autoIncrement := Js.bool auto_increment;
+    opts
+  | None, None ->
+    raise (Invalid_argument "At least one of key_path, auto_increment should be provided")
+
+let create_store ?options (db : db) name =
+  (match options with
+  | Some options ->
+    db##createObjectStore_withOptions name options
+  | None ->
+    db##createObjectStore name)
+  |> ignore
 
 let close db =
   db##close
@@ -87,9 +108,10 @@ let make db_name ~version ~init =
          their connections before upgrading schema version.";
       Js._true
     );
-  request##.onupgradeneeded := Dom.handler (fun _event ->
+  request##.onupgradeneeded := Dom.handler (fun event ->
       try
-        init request##.result;
+        let old_version = event##.oldVersion in
+        init ~old_version request##.result;
         Js._true
       with ex ->
         (* Firefox throws the exception away and returns AbortError
@@ -271,6 +293,25 @@ module Unsafe = struct
       |> Lwt.wakeup set_r;
       Js._true
 
+  let bulk_get t keys =
+    trans_ro t @@ fun store set_r ->
+    let results = ref []
+    and count = List.length keys
+    in
+    let get i key =
+      let request = store##get key in
+      request##.onsuccess :=
+        Dom.handler @@ fun _event ->
+          (key, Js.Optdef.to_option request##.result) :: !results
+          |> if Int.equal (i + 1) count then Lwt.wakeup set_r else (:=) results;
+        Js._true
+    in
+    List.iteri get keys
+
+  let bulk_set t items =
+    trans_rw t @@ fun store ->
+    List.iter (fun (key, value) -> ignore (store##put value key)) items
+
   let remove t key =
     trans_rw t @@ fun store ->
     ignore (store##delete key)
@@ -391,6 +432,16 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
     Unsafe.get_all ?query ?count store
     |> Lwt.map (List.map C.to_content)
 
+  let bulk_get store keys =
+    List.map C.of_key keys
+    |> Unsafe.bulk_get store
+    |> Lwt.map (List.map (fun (key, value) -> C.to_key key, Option.map C.to_content value))
+
+  let bulk_set store items =
+    items
+    |> List.map (fun (key, content) -> (C.of_key key), (C.of_content content))
+    |> Unsafe.bulk_set store
+
   let remove store key =
     Unsafe.remove store (C.of_key key)
 
@@ -444,6 +495,16 @@ module Json = struct
     Lwt.map
       (List.map Json.unsafe_input)
       (Unsafe.get_all ?query ?count store)
+
+  let bulk_get store keys =
+    Lwt.map
+      (List.map (fun (key, value) -> key, Option.map Json.unsafe_input value))
+      (Unsafe.bulk_get store keys)
+
+  let bulk_set store items =
+    items
+    |> List.map (fun (key, content) -> key, Json.output content)
+    |> Unsafe.bulk_set store
 
   let remove = Unsafe.remove
 
