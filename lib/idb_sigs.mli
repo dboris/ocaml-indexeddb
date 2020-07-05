@@ -45,8 +45,13 @@ module type DB = sig
 
   val delete_database : db_name -> unit Lwt.t
 
-  val create_store : ?options:store_options -> db_upgrader -> store_name -> unit
+  type content
 
+  val create_store :
+    ?options:store_options ->
+    db_upgrader ->
+    store_name ->
+    content Idb.objectStore Js.t
 end
 
 module type STORE = sig

@@ -1,12 +1,12 @@
-(* Copyright (C) 2015, Thomas Leonard. See the LICENSE file for
-   details. *)
+(* Copyright (C) 2015, Thomas Leonard. See the LICENSE file for details. *)
 
 (** js_of_ocaml type declarations for the w3c IndexedDB spec:
 
     http://www.w3.org/TR/IndexedDB/
 
     Currently only covers the bits needed for CueKeeper.
-    IndexedDB_lwt provides a more friendly API. *)
+    IndexedDB_lwt provides a more friendly API.
+*)
 
 open Js_of_ocaml
 
@@ -15,6 +15,7 @@ open Js_of_ocaml
 type key = Js.js_string Js.t
 type _ store_name = Js.js_string Js.t
 type mode = Js.js_string Js.t
+type index_name = Js.js_string Js.t
 
 class type versionChangeEvent = object
   inherit Dom_html.event
@@ -99,27 +100,92 @@ let keyRange_constr = Js.Unsafe.global##._IDBKeyRange
 
 let keyRange : keyRange_constr Js.t = keyRange_constr
 
-class type ['a] objectStore = object
+class type indexParameters = object
+  method multiEntry : bool Js.t Js.writeonly_prop
+  method unique : bool Js.t Js.writeonly_prop
+end
+
+let indexParameters () : indexParameters Js.t =
+  Js.Unsafe.obj [||]
+
+class type ['a] index = object
+  method name : Js.js_string Js.t Js.prop
+  method objectStore : Js.js_string Js.t Js.readonly_prop
   method keyPath : key Js.readonly_prop
-  method autoIncrement : bool Js.t Js.readonly_prop
-  method add : 'a Js.t -> key -> request Js.t Js.meth
-  method put : 'a Js.t -> key -> request Js.t Js.meth
-  method delete : key -> request Js.t Js.meth
+  method multiEntry : bool Js.t Js.readonly_prop
+  method unique : bool Js.t Js.readonly_prop
+
+  method count : int requestWithResult Js.t Js.meth
+  method count_key : key ->  int requestWithResult Js.t Js.meth
+  method count_query : keyRange Js.t -> int requestWithResult Js.t Js.meth
+
   method get : key -> 'a Js.t requestWithResult Js.t Js.meth
-  method openCursor : 'a Js.t openCursorRequest Js.t Js.meth
-  method openCursor_query :
-    keyRange Js.t -> 'a Js.t openCursorRequest Js.t Js.meth
-  method openCursor_queryAndDirection :
-    keyRange Js.t Js.Opt.t -> Js.js_string Js.t ->
-    'a Js.t openCursorRequest Js.t Js.meth
-  method add_object : 'a Js.t -> key requestWithResult Js.t Js.meth
-  method put_object : 'a Js.t -> key requestWithResult Js.t Js.meth
+  method get_query :
+    keyRange Js.t -> 'a Js.t requestWithResult Js.t Js.meth
+
   method getAll : 'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
   method getAll_query :
     keyRange Js.t -> 'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
   method getAll_queryAndCount :
     keyRange Js.t Js.Opt.t -> int ->
     'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
+
+  method getKey : key -> key requestWithResult Js.t Js.meth
+  method getKey_query :
+    keyRange Js.t -> key requestWithResult Js.t Js.meth
+
+  method getAllKeys : key Js.js_array Js.t requestWithResult Js.t Js.meth
+  method getAllKeys_query :
+    keyRange Js.t -> key Js.js_array Js.t requestWithResult Js.t Js.meth
+  method getAllKeys_queryAndCount :
+    keyRange Js.t Js.Opt.t -> int ->
+    key Js.js_array Js.t requestWithResult Js.t Js.meth
+
+  method openCursor : 'a Js.t openCursorRequest Js.t Js.meth
+  method openCursor_query :
+    keyRange Js.t -> 'a Js.t openCursorRequest Js.t Js.meth
+  method openCursor_queryAndDirection :
+    keyRange Js.t Js.Opt.t -> Js.js_string Js.t ->
+    'a Js.t openCursorRequest Js.t Js.meth
+
+  method openKeyCursor : key openCursorRequest Js.t Js.meth
+  method openKeyCursor_query :
+    keyRange Js.t -> key openCursorRequest Js.t Js.meth
+  method openKeyCursor_queryAndDirection :
+    keyRange Js.t Js.Opt.t -> Js.js_string Js.t ->
+    key openCursorRequest Js.t Js.meth
+end
+
+class type ['a] objectStore = object
+  method keyPath : key Js.readonly_prop
+  method autoIncrement : bool Js.t Js.readonly_prop
+  method indexNames : index_name Js.js_array Js.t Js.readonly_prop
+
+  method get : key -> 'a Js.t requestWithResult Js.t Js.meth
+  method put : 'a Js.t -> key -> request Js.t Js.meth
+  method add : 'a Js.t -> key -> request Js.t Js.meth
+  method delete : key -> request Js.t Js.meth
+
+  method put_object : 'a Js.t -> key requestWithResult Js.t Js.meth
+  method add_object : 'a Js.t -> key requestWithResult Js.t Js.meth
+
+  method getAll : 'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
+  method getAll_query :
+    keyRange Js.t -> 'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
+  method getAll_queryAndCount :
+    keyRange Js.t Js.Opt.t -> int ->
+    'a Js.t Js.js_array Js.t requestWithResult Js.t Js.meth
+
+  method openCursor : 'a Js.t openCursorRequest Js.t Js.meth
+  method openCursor_query :
+    keyRange Js.t -> 'a Js.t openCursorRequest Js.t Js.meth
+  method openCursor_queryAndDirection :
+    keyRange Js.t Js.Opt.t -> Js.js_string Js.t ->
+    'a Js.t openCursorRequest Js.t Js.meth
+
+  method createIndex : index_name -> key -> 'a index Js.t Js.meth
+  method createIndex_withOptions :
+    index_name -> key -> indexParameters -> 'a index Js.t Js.meth
 end
 
 class type ['a] transaction = object
