@@ -97,6 +97,7 @@ module type STORE = sig
   val get : ?index:index_name -> store -> key -> content option Lwt.t
 
   val get_all :
+    ?index:index_name ->
     ?query:key_range ->
     ?count:int ->
     store ->
@@ -170,6 +171,7 @@ module type STORE_POLY = sig
   val get : ?index:index_name -> 'a store -> key -> 'a content option Lwt.t
 
   val get_all :
+    ?index:index_name ->
     ?query:key_range ->
     ?count:int ->
     'a store ->

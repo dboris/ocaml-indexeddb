@@ -309,17 +309,25 @@ module Unsafe = struct
       |> Lwt.wakeup set_r;
       Js._true
 
-  let get_all ?query ?count t =
+  let get_all ?index ?query ?count t =
     trans_ro t @@ fun store set_r ->
     let request =
-      match query, count with
-      | Some query, Some count ->
+      match index, query, count with
+      | Some index, Some query, Some count ->
+        (store##index index)##getAll_queryAndCount (Js.Opt.return query) count
+      | Some index, Some query, None ->
+        (store##index index)##getAll_query query
+      | Some index, None, Some count ->
+        (store##index index)##getAll_queryAndCount Js.Opt.empty count
+      | Some index, None, None ->
+        (store##index index)##getAll
+      | None, Some query, Some count ->
         store##getAll_queryAndCount (Js.Opt.return query) count
-      | Some query, None ->
+      | None, Some query, None ->
         store##getAll_query query
-      | None, Some count ->
+      | None, None, Some count ->
         store##getAll_queryAndCount Js.Opt.empty count
-      | None, None ->
+      | None, None, None ->
         store##getAll
     in
     request##.onsuccess :=
@@ -465,8 +473,8 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
     |> Unsafe.get ?index store
     |> Lwt.map (Option.map C.to_content)
 
-  let get_all ?query ?count store =
-    Unsafe.get_all ?query ?count store
+  let get_all ?index ?query ?count store =
+    Unsafe.get_all ?index ?query ?count store
     |> Lwt.map (List.map C.to_content)
 
   let bulk_get store keys =
@@ -528,10 +536,10 @@ module Json = struct
       (Option.map Json.unsafe_input)
       (Unsafe.get ?index store key)
 
-  let get_all ?query ?count store =
+  let get_all ?index ?query ?count store =
     Lwt.map
       (List.map Json.unsafe_input)
-      (Unsafe.get_all ?query ?count store)
+      (Unsafe.get_all ?index ?query ?count store)
 
   let bulk_get store keys =
     Lwt.map
