@@ -44,7 +44,7 @@ module type DB = sig
     unit ->
     index_options
 
-type transaction
+  type transaction
 
   (** Connect to database [db_name]. If it doesn't yet exist or is for
       an older version, calls [init] to initialise it first. *)
