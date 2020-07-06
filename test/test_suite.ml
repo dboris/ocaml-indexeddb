@@ -346,6 +346,40 @@ let test_create_index wrapper =
         let%lwt _db = Idb_lwt.make db_name ~version:4 ~init in
         Lwt.return ()
 
+let test_get_by_index wrapper =
+    let module Idb_store = Idb_lwt.Unsafe in
+    let db_name = Idb_lwt.db_name "test-db"
+    and store_name = Idb_lwt.store_name "salutations"
+    and idx_name = Idb_lwt.index_name "by-lang"
+    and bonjour =
+        Js.Unsafe.obj
+            [| "lang", Js.Unsafe.inject (Js.string "fr")
+            ;  "s", Js.Unsafe.inject (Js.string "bonjour")
+            |]
+    and hola =
+        Js.Unsafe.obj
+            [| "lang", Js.Unsafe.inject (Js.string "es")
+            ;  "s", Js.Unsafe.inject (Js.string "hola")
+            |]
+    in
+    Lwt.async @@ fun () ->
+        let init ~old_version:_ _ = ()
+        in
+        let%lwt db = Idb_lwt.make db_name ~version:4 ~init in
+        let store = Idb_store.store db store_name in
+        let%lwt () =
+            Idb_store.bulk_set store
+                [ Js.string "a", bonjour
+                ; Js.string "b", hola
+                ]
+        in
+        let%lwt result = Idb_store.get_by_index store idx_name (Js.string "fr") in
+        wrapper (fun () ->
+            assert_true (Option.is_some result);
+            result |> Option.iter (fun obj ->
+                assert_equal (Js.Unsafe.get obj (Js.string "s")) (Js.string "bonjour")));
+        Lwt.return ()
+
 let js_api_tests =
     "js_api" >::: [
         (* "test_fail" >:: test_fail; *)
@@ -370,4 +404,5 @@ let idb_lwt_tests =
         "test_bulk_get" >:~ test_bulk_get;
         "test_create_store_with_options" >:~ test_create_store_with_options;
         "test_create_index" >:~ test_create_index;
+        "test_get_by_index" >:~ test_get_by_index;
     ]

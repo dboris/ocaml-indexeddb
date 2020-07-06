@@ -16,6 +16,7 @@ module Unsafe : Idb_sigs.STORE_POLY
    and type 'a content = 'a Js.t
    and type db := db
    and type store_name := store_name
+   and type index_name := index_name
 
 (** Store that uses the Js_of_ocaml [Json] module for serialization *)
 module Json : Idb_sigs.STORE_POLY
@@ -23,6 +24,7 @@ module Json : Idb_sigs.STORE_POLY
    and type 'a content = 'a
    and type db := db
    and type store_name := store_name
+   and type index_name := index_name
 
 (** Functorial interface *)
 module Make (C : Idb_sigs.Js_string_conv) : Idb_sigs.STORE
@@ -30,3 +32,4 @@ module Make (C : Idb_sigs.Js_string_conv) : Idb_sigs.STORE
    and type content = C.content
    and type db := db
    and type store_name := store_name
+   and type index_name := index_name

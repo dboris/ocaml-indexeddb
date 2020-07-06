@@ -303,6 +303,16 @@ module Unsafe = struct
       |> Lwt.wakeup set_r;
       Js._true
 
+  let get_by_index t index_name key =
+    trans_ro t @@ fun store set_r ->
+    let index = store##index index_name in
+    let request = index##get key in
+    request##.onsuccess :=
+      Dom.handler @@ fun _event ->
+      Js.Optdef.to_option request##.result
+      |> Lwt.wakeup set_r;
+      Js._true
+
   let get_all ?query ?count t =
     trans_ro t @@ fun store set_r ->
     let request =
@@ -459,6 +469,11 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
     |> Unsafe.get store
     |> Lwt.map (Option.map C.to_content)
 
+  let get_by_index store index_name key =
+    C.of_key key
+    |> Unsafe.get_by_index store index_name
+    |> Lwt.map (Option.map C.to_content)
+
   let get_all ?query ?count store =
     Unsafe.get_all ?query ?count store
     |> Lwt.map (List.map C.to_content)
@@ -521,6 +536,11 @@ module Json = struct
     Lwt.map
       (Option.map Json.unsafe_input)
       (Unsafe.get store key)
+
+  let get_by_index store index_name key =
+    Lwt.map
+      (Option.map Json.unsafe_input)
+      (Unsafe.get_by_index store index_name key)
 
   let get_all ?query ?count store =
     Lwt.map

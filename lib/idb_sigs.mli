@@ -73,6 +73,7 @@ module type STORE = sig
 
   type db
   type store_name
+  type index_name
 
   type store
   type key
@@ -94,6 +95,8 @@ module type STORE = sig
   val set : store -> key -> content -> unit Lwt.t
 
   val get : store -> key -> content option Lwt.t
+
+  val get_by_index : store -> index_name -> key -> content option Lwt.t
 
   val get_all :
     ?query:key_range ->
@@ -145,6 +148,7 @@ module type STORE_POLY = sig
 
   type db
   type store_name
+  type index_name
 
   type 'a store
   type key
@@ -166,6 +170,8 @@ module type STORE_POLY = sig
   val set : 'a store -> key -> 'a content -> unit Lwt.t
 
   val get : 'a store -> key -> 'a content option Lwt.t
+
+  val get_by_index : 'a store -> index_name -> key -> 'a content option Lwt.t
 
   val get_all :
     ?query:key_range ->
