@@ -389,22 +389,34 @@ module Unsafe = struct
     | None -> failwith "Transaction completed, but no result!"
     | Some x -> x
 
-  let fold_impl cursor_direction ?query ?unique f acc t =
+  let fold_impl cursor_direction ?index ?query ?unique f acc t =
     let acc = ref acc in
     trans_ro t @@ fun store set_r ->
     let request =
-      match query, unique with
-      | Some query, Some unique ->
+      match index, query, unique with
+      | Some index, Some query, Some unique ->
+        (store##index index)##openCursor_queryAndDirection
+          (Js.Opt.return query)
+          (cursor_direction unique)
+      | Some index, Some query, None ->
+        (store##index index)##openCursor_query query
+      | Some index, None, Some unique ->
+        (store##index index)##openCursor_queryAndDirection
+          Js.Opt.empty
+          (cursor_direction unique)
+      | Some index, None, None ->
+        (store##index index)##openCursor
+      | None, Some query, Some unique ->
         store##openCursor_queryAndDirection
           (Js.Opt.return query)
           (cursor_direction unique)
-      | Some query, None ->
+      | None, Some query, None ->
         store##openCursor_query query
-      | None, Some unique ->
+      | None, None, Some unique ->
         store##openCursor_queryAndDirection
           Js.Opt.empty
           (cursor_direction unique)
-      | None, None ->
+      | None, None, None ->
         store##openCursor
     in
     request##.onsuccess :=
@@ -418,17 +430,17 @@ module Unsafe = struct
            cursor##continue);
       Js._true
 
-  let fold ?query ?unique f acc t =
+  let fold ?index ?query ?unique f acc t =
     let cursor_direction unique =
       Js.string (if unique then "nextunique" else "next")
     in
-    fold_impl cursor_direction ?query ?unique f acc t
+    fold_impl cursor_direction ?index ?query ?unique f acc t
 
-  let fold_right ?query ?unique f acc t =
+  let fold_right ?index ?query ?unique f acc t =
     let cursor_direction unique =
       Js.string (if unique then "prevunique" else "prev")
     in
-    fold_impl cursor_direction ?query ?unique f acc t
+    fold_impl cursor_direction ?index ?query ?unique f acc t
 
   let bindings t =
     let acc = []
@@ -496,13 +508,13 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
     and new_value = Option.map C.of_content new_value in
     Unsafe.compare_and_set store key ~test ~new_value
 
-  let fold ?query ?unique f acc store =
+  let fold ?index ?query ?unique f acc store =
     let f acc key content = f acc (C.to_key key) (C.to_content content) in
-    Unsafe.fold ?query ?unique f acc store
+    Unsafe.fold ?index ?query ?unique f acc store
 
-  let fold_right ?query ?unique f acc store =
+  let fold_right ?index ?query ?unique f acc store =
     let f acc key content = f acc (C.to_key key) (C.to_content content) in
-    Unsafe.fold ?query ?unique f acc store
+    Unsafe.fold ?index ?query ?unique f acc store
 
   let bindings t =
     let acc = []
@@ -558,13 +570,13 @@ module Json = struct
     and new_value = Option.map Json.output new_value in
     Unsafe.compare_and_set store key ~test ~new_value
 
-  let fold ?query ?unique f acc store =
+  let fold ?index ?query ?unique f acc store =
     let f acc key content = f acc key (Json.unsafe_input content) in
-    Unsafe.fold ?query ?unique f acc store
+    Unsafe.fold ?index ?query ?unique f acc store
 
-  let fold_right ?query ?unique f acc store =
+  let fold_right ?index ?query ?unique f acc store =
     let f acc key content = f acc key (Json.unsafe_input content) in
-    Unsafe.fold ?query ?unique f acc store
+    Unsafe.fold ?index ?query ?unique f acc store
 
   let bindings t =
     let acc = []
