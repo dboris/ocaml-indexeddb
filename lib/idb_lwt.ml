@@ -19,8 +19,15 @@ type store_name = Js.js_string Js.t
 let store_name = Js.string
 
 type content
+type store = content Idb.objectStore Js.t
 
 type store_options = Idb.createObjectStoreOptions Js.t
+
+type index_name = Js.js_string Js.t
+
+let index_name = Js.string
+
+type index_options = Idb.indexParameters Js.t
 
 let store_options ?key_path ?auto_increment () =
   let opts = Idb.createObjectStoreOptions () in
@@ -42,6 +49,30 @@ let create_store ?options (db : db) name =
     db##createObjectStore_withOptions name options
   | None ->
     db##createObjectStore name
+
+let index_options ?multi_entry ?unique () =
+  let opts = Idb.indexParameters () in
+  match multi_entry, unique with
+  | Some multi_entry, Some unique ->
+    opts##.multiEntry := Js.bool multi_entry;
+    opts##.unique := Js.bool unique;
+    opts
+  | Some multi_entry, None ->
+    opts##.multiEntry := Js.bool multi_entry;
+    opts
+  | None, Some unique ->
+    opts##.unique := Js.bool unique;
+    opts
+  | None, None ->
+    invalid_arg "At least one of multi_entry, unique should be provided"
+
+let create_index ?options (store : store) name key_path =
+  (match options with
+  | Some options ->
+    store##createIndex_withOptions name (Js.string key_path) options
+  | None ->
+    store##createIndex name (Js.string key_path))
+  |> ignore
 
 let close db =
   db##close

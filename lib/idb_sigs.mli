@@ -22,8 +22,13 @@ module type DB = sig
   type db_name
   val db_name : string -> db_name
 
+  type store
+
   type store_name
   val store_name : string -> store_name
+
+  type index_name
+  val index_name : string -> index_name
 
   type store_options
   val store_options :
@@ -31,6 +36,13 @@ module type DB = sig
     ?auto_increment:bool ->
     unit ->
     store_options
+
+  type index_options
+  val index_options :
+    ?multi_entry:bool ->
+    ?unique:bool ->
+    unit ->
+    index_options
 
   (** Connect to database [db_name]. If it doesn't yet exist or is for
       an older version, calls [init] to initialise it first. *)
@@ -45,13 +57,16 @@ module type DB = sig
 
   val delete_database : db_name -> unit Lwt.t
 
-  type content
-
   val create_store :
-    ?options:store_options ->
-    db_upgrader ->
-    store_name ->
-    content Idb.objectStore Js.t
+    ?options:store_options -> db_upgrader -> store_name -> store
+
+  val create_index :
+    ?options:index_options ->
+    store ->
+    index_name ->
+    string ->
+    unit
+
 end
 
 module type STORE = sig

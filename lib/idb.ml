@@ -185,7 +185,9 @@ class type ['a] objectStore = object
 
   method createIndex : index_name -> key -> 'a index Js.t Js.meth
   method createIndex_withOptions :
-    index_name -> key -> indexParameters -> 'a index Js.t Js.meth
+    index_name -> key -> indexParameters Js.t -> 'a index Js.t Js.meth
+
+  method index : index_name -> 'a index Js.t Js.meth
 end
 
 class type ['a] transaction = object

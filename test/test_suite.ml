@@ -325,24 +325,25 @@ let test_create_store_with_options wrapper =
         let init ~old_version:_ db =
             let options = Idb_lwt.store_options ~auto_increment:true () in
             Idb_lwt.create_store ~options db new_store_name |> ignore;
-            wrapper Async.noop;
+            wrapper Async.noop
         in
         let%lwt _db = Idb_lwt.make db_name ~version:3 ~init in
         Lwt.return ()
 
 let test_create_index wrapper =
-    let module Idb_store = Idb_lwt.Unsafe in
-    let db_name = Idb_lwt.db_name "test-db2"
+    let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "salutations"
     in
     Lwt.async @@ fun () ->
         let init ~old_version:_ db =
-            let store = Idb_lwt.create_store db store_name in
-            let index = store##createIndex (Js.string "by-lang") (Js.string "lang") in
-            wrapper (fun () ->
-                assert_equal index##.keyPath (Js.string "lang"));
+            let store = Idb_lwt.create_store db store_name
+            and idx_name = Idb_lwt.index_name "by-lang"
+            and key_path = "lang"
+            in
+            Idb_lwt.create_index store idx_name key_path;
+            wrapper Async.noop
         in
-        let%lwt _db = Idb_lwt.make db_name ~version:1 ~init in
+        let%lwt _db = Idb_lwt.make db_name ~version:4 ~init in
         Lwt.return ()
 
 let js_api_tests =
@@ -357,7 +358,6 @@ let js_api_tests =
         "test_keyRange_constr_only" >:: test_keyRange_constr_only;
         "test_getAll_query" >:~ test_getAll_query;
         "test_openCursor_query" >:~ test_openCursor_query;
-        "test_create_index" >:~ test_create_index;
     ]
 
 let idb_lwt_tests =
@@ -369,4 +369,5 @@ let idb_lwt_tests =
         "test_fold_query" >:~ test_fold_query;
         "test_bulk_get" >:~ test_bulk_get;
         "test_create_store_with_options" >:~ test_create_store_with_options;
+        "test_create_index" >:~ test_create_index;
     ]
