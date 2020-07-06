@@ -373,7 +373,7 @@ let test_get_by_index wrapper =
                 ; Js.string "b", hola
                 ]
         in
-        let%lwt result = Idb_store.get_by_index store idx_name (Js.string "fr") in
+        let%lwt result = Idb_store.get ~index:idx_name store (Js.string "fr") in
         wrapper (fun () ->
             assert_true (Option.is_some result);
             result |> Option.iter (fun obj ->

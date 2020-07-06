@@ -94,9 +94,7 @@ module type STORE = sig
 
   val set : store -> key -> content -> unit Lwt.t
 
-  val get : store -> key -> content option Lwt.t
-
-  val get_by_index : store -> index_name -> key -> content option Lwt.t
+  val get : ?index:index_name -> store -> key -> content option Lwt.t
 
   val get_all :
     ?query:key_range ->
@@ -169,9 +167,7 @@ module type STORE_POLY = sig
 
   val set : 'a store -> key -> 'a content -> unit Lwt.t
 
-  val get : 'a store -> key -> 'a content option Lwt.t
-
-  val get_by_index : 'a store -> index_name -> key -> 'a content option Lwt.t
+  val get : ?index:index_name -> 'a store -> key -> 'a content option Lwt.t
 
   val get_all :
     ?query:key_range ->

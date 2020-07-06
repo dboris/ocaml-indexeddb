@@ -294,19 +294,15 @@ module Unsafe = struct
     trans_rw t @@ fun store ->
     ignore (store##put value key)
 
-  let get t key =
+  let get ?index t key =
     trans_ro t @@ fun store set_r ->
-    let request = store##get key in
-    request##.onsuccess :=
-      Dom.handler @@ fun _event ->
-      Js.Optdef.to_option request##.result
-      |> Lwt.wakeup set_r;
-      Js._true
-
-  let get_by_index t index_name key =
-    trans_ro t @@ fun store set_r ->
-    let index = store##index index_name in
-    let request = index##get key in
+    let request =
+      match index with
+      | Some index ->
+        (store##index index)##get key
+      | None ->
+        store##get key
+    in
     request##.onsuccess :=
       Dom.handler @@ fun _event ->
       Js.Optdef.to_option request##.result
@@ -464,14 +460,9 @@ module Make (C : Idb_sigs.Js_string_conv) = struct
   let set store key content =
     Unsafe.set store (C.of_key key) (C.of_content content)
 
-  let get store key =
+  let get ?index store key =
     C.of_key key
-    |> Unsafe.get store
-    |> Lwt.map (Option.map C.to_content)
-
-  let get_by_index store index_name key =
-    C.of_key key
-    |> Unsafe.get_by_index store index_name
+    |> Unsafe.get ?index store
     |> Lwt.map (Option.map C.to_content)
 
   let get_all ?query ?count store =
@@ -532,15 +523,10 @@ module Json = struct
   let set store key content =
     Unsafe.set store key (Json.output content)
 
-  let get store key =
+  let get ?index store key =
     Lwt.map
       (Option.map Json.unsafe_input)
-      (Unsafe.get store key)
-
-  let get_by_index store index_name key =
-    Lwt.map
-      (Option.map Json.unsafe_input)
-      (Unsafe.get_by_index store index_name key)
+      (Unsafe.get ?index store key)
 
   let get_all ?query ?count store =
     Lwt.map
