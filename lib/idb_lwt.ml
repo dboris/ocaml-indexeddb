@@ -19,7 +19,10 @@ type store_name = Js.js_string Js.t
 let store_name = Js.string
 
 type content
+
 type store = content Idb.objectStore Js.t
+
+type transaction = content Idb.transaction Js.t
 
 type store_options = Idb.createObjectStoreOptions Js.t
 
@@ -49,6 +52,9 @@ let create_store ?options (db : db) name =
     db##createObjectStore_withOptions name options
   | None ->
     db##createObjectStore name
+
+let store transaction store_name =
+  transaction##objectStore store_name
 
 let index_options ?multi_entry ?unique () =
   let opts = Idb.indexParameters () in
@@ -141,8 +147,10 @@ let make db_name ~version ~init =
     );
   request##.onupgradeneeded := Dom.handler (fun event ->
       try
-        let old_version = event##.oldVersion in
-        init ~old_version request##.result;
+        let old_version = event##.oldVersion
+        and upgrade_transaction = request##.transaction
+        in
+        init ~old_version ~upgrade_transaction request##.result;
         Js._true
       with ex ->
         (* Firefox throws the exception away and returns AbortError

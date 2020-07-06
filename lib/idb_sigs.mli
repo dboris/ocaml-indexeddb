@@ -44,12 +44,14 @@ module type DB = sig
     unit ->
     index_options
 
+type transaction
+
   (** Connect to database [db_name]. If it doesn't yet exist or is for
       an older version, calls [init] to initialise it first. *)
   val make :
     db_name ->
     version:int ->
-    init:(old_version:int -> db_upgrader -> unit) ->
+    init:(old_version:int -> upgrade_transaction:transaction -> db_upgrader -> unit) ->
     db Lwt.t
 
   (** Begin closing the connection (returns immediately). *)
@@ -67,6 +69,7 @@ module type DB = sig
     string ->
     unit
 
+  val store : transaction -> store_name -> store
 end
 
 module type STORE = sig

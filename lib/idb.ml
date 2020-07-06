@@ -222,6 +222,7 @@ class type openDBRequest = object ('self)
   method onblocked :
     ('self Js.t, versionChangeEvent Js.t) Dom_html.event_listener Js.prop
   method result : database Js.t Js.readonly_prop
+  method transaction : 'a . 'a transaction Js.t Js.readonly_prop
 end
 
 class type factory = object

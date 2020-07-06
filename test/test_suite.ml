@@ -217,7 +217,7 @@ let test_openCursor_query wrapper =
 let test_get_all wrapper =
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init ~old_version:_ _ = ()
+    and init ~old_version:_ ~upgrade_transaction:_ _ = ()
     in
     Lwt.async @@ fun () ->
         let%lwt db = Idb_lwt.make db_name ~version:2 ~init in
@@ -232,7 +232,7 @@ let test_get_all_query wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init ~old_version:_ _ = ()
+    and init ~old_version:_ ~upgrade_transaction:_ _ = ()
     and query = Idb_store.key_range_bound (Js.string "a") (Js.string "d")
     in
     Lwt.async @@ fun () ->
@@ -248,7 +248,7 @@ let test_get_all_query_and_count wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init ~old_version:_ _ = ()
+    and init ~old_version:_ ~upgrade_transaction:_ _ = ()
     and query = Idb_store.key_range_bound (Js.string "a") (Js.string "z")
     and count = 3
     in
@@ -265,7 +265,7 @@ let test_get_all_count wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init ~old_version:_ _ = ()
+    and init ~old_version:_ ~upgrade_transaction:_ _ = ()
     and count = 3
     in
     Lwt.async @@ fun () ->
@@ -281,7 +281,7 @@ let test_fold_query wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init ~old_version:_ _ = ()
+    and init ~old_version:_ ~upgrade_transaction:_ _ = ()
     and query = Idb_store.key_range_bound (Js.string "a") (Js.string "d")
     in
     Lwt.async @@ fun () ->
@@ -302,7 +302,7 @@ let test_bulk_get wrapper =
     let module Idb_store = Idb_lwt.Unsafe in
     let db_name = Idb_lwt.db_name "test-db"
     and store_name = Idb_lwt.store_name "test-store"
-    and init ~old_version:_ _ = ()
+    and init ~old_version:_ ~upgrade_transaction:_ _ = ()
     and keys = [Js.string "nah"; Js.string "bonjour"; Js.string "ciao"]
     in
     Lwt.async @@ fun () ->
@@ -322,7 +322,7 @@ let test_create_store_with_options wrapper =
     and new_store_name = Idb_lwt.store_name "auto-incr-store"
     in
     Lwt.async @@ fun () ->
-        let init ~old_version:_ db =
+        let init ~old_version:_ ~upgrade_transaction:_ db =
             let options = Idb_lwt.store_options ~auto_increment:true () in
             Idb_lwt.create_store ~options db new_store_name |> ignore;
             wrapper Async.noop
@@ -335,7 +335,7 @@ let test_create_index wrapper =
     and store_name = Idb_lwt.store_name "salutations"
     in
     Lwt.async @@ fun () ->
-        let init ~old_version:_ db =
+        let init ~old_version:_ ~upgrade_transaction:_ db =
             let store = Idb_lwt.create_store db store_name
             and idx_name = Idb_lwt.index_name "by-lang"
             and key_path = "lang"
@@ -363,7 +363,7 @@ let test_get_by_index wrapper =
             |]
     in
     Lwt.async @@ fun () ->
-        let init ~old_version:_ _ = ()
+        let init ~old_version:_ ~upgrade_transaction:_ _ = ()
         in
         let%lwt db = Idb_lwt.make db_name ~version:4 ~init in
         let store = Idb_store.store db store_name in
@@ -378,6 +378,22 @@ let test_get_by_index wrapper =
             assert_true (Option.is_some result);
             result |> Option.iter (fun obj ->
                 assert_equal (Js.Unsafe.get obj (Js.string "s")) (Js.string "bonjour")));
+        Lwt.return ()
+
+let test_update_existing_store wrapper =
+    let db_name = Idb_lwt.db_name "test-db"
+    and store_name = Idb_lwt.store_name "salutations"
+    in
+    Lwt.async @@ fun () ->
+        let init ~old_version:_ ~upgrade_transaction _db =
+            let store = Idb_lwt.store upgrade_transaction store_name
+            and idx_name = Idb_lwt.index_name "by-salutation"
+            and key_path = "s"
+            in
+            Idb_lwt.create_index store idx_name key_path;
+            wrapper Async.noop
+        in
+        let%lwt _db = Idb_lwt.make db_name ~version:5 ~init in
         Lwt.return ()
 
 let js_api_tests =
@@ -405,4 +421,5 @@ let idb_lwt_tests =
         "test_create_store_with_options" >:~ test_create_store_with_options;
         "test_create_index" >:~ test_create_index;
         "test_get_by_index" >:~ test_get_by_index;
+        "test_update_existing_store" >:~ test_update_existing_store;
     ]
